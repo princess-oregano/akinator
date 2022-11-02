@@ -1,54 +1,85 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "tree.h"
 
-void 
-node_ctor(node_t *node)
+static void
+tree_resize(node_t **nodes, int cap)
 {
-        if (node != nullptr) {
-                fprintf(stderr, "Warning: pointer to node "
-                                "is already initialized\n");
+        if (cap <= 0) {
+                fprintf(stderr, "Invalid cap.\n");
         }
+        node_t *tmp_nodes = (node_t *) realloc(*nodes, 
+                            (size_t) cap * sizeof(node_t));
 
-        node_t *tmp_node = (node_t *) calloc(1, sizeof(node_t));
-        if (tmp_node == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory for node.\n");
+        if (tmp_nodes == nullptr) {
+                fprintf(stderr, "Error: Couldn't allocate memory "
+                                "for nodes.\n");
                 return;
-        }
+        } 
 
-        node = tmp_node;
+        *nodes = tmp_nodes;
 }
 
 void
-node_init(node_t *node, data_t data)
+tree_ctor(tree_t *tree, int cap)
 {
-        assert(node);
+        tree_resize(&tree->nodes, cap);
 
-        node->data = data;
+        for (int i = tree->cap; i < cap; i++) {
+                memset(&tree->nodes[i].data, DATA_POISON, sizeof(data_t));
+                tree->nodes[i].left = nullptr;
+                tree->nodes[i].right = nullptr;
+                tree->nodes[i].next = i + 1; 
+        }
+
+        tree->nodes[cap - 1].next = -1;
+
+        tree->cap = cap;
+        tree->free = 0;
+}
+
+void
+node_init(tree_t *tree, node_t **parent, data_t data)
+{
+        assert(tree);
+        
+        if (tree->free == tree->cap - 1)
+                tree_resize(&tree->nodes, tree->cap * 2);  
+
+        node_bound(parent, &tree->nodes[tree->free]);
+
+        tree->nodes[tree->free].data = data;
+        tree->free = tree->nodes[tree->free].next;
 }
 
 void
 node_bound(node_t **parent, node_t *node)
 {
+        assert(parent);
         assert(node);
+
+        if (*parent != nullptr) {
+                fprintf(stderr, "Warning: pointer is already initialized.\n"
+                                "Bounding may lead to loss of data.\n");
+        }
 
         *parent = node;
 }
 
 void
-node_unbound(node_t **parent, node_t *node)
+node_dtor(tree_t *tree, node_t *node)
 {
+        assert(tree);
         assert(node);
 
-        *parent = nullptr;
-}
+        memset(&node->data, DATA_POISON, sizeof(data_t));
 
-void
-node_dtor(node_t *node)
-{
-        assert(node);
+        node->left = nullptr;
+        node->right = nullptr;
 
-        free(node);
+        node->next = tree->free;
+        tree->free = (int) (node - tree->nodes);
 }
 

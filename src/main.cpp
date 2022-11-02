@@ -1,22 +1,28 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "tree.h"
 
 int
 main()
 {
-        node_t root {};
-        node_t node1 {};
-        node_t node2 {};
+        tree_t tree;
+        int cap = 100;
 
-        node_bound(&root.left, &node1);
-        node_bound(&root.right, &node2);
+        tree_ctor(&tree, cap);
+        
+        node_init(&tree, &tree.root, 3);
+        node_init(&tree, &tree.root->left, 4);
+        node_init(&tree, &tree.root->right, 2);
 
-        node_init(&node1, 3);
-        node_init(&node2, 4);
-        node_init(&root, 1);
+        fprintf(stderr, "root = %d, root.left = %d, root.right = %d\n", 
+                tree.root->data, tree.root->left->data, tree.root->right->data);
 
-        printf("root.left = %d; root.right = %d\n", root.left->data, root.right->data);
-        printf("node1 = %d; node2 = %d\n", node1.data, node2.data);
+        node_dtor(&tree, tree.root->left);
+        node_dtor(&tree, tree.root->right);
+        node_dtor(&tree, tree.root);
+
+        free(tree.nodes);
+
         return 0;
 }
 
