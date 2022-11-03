@@ -9,14 +9,14 @@ const int    NEXT_POISON = 0xAE;
 
 struct node_t {
         data_t data {};
-        node_t *left = nullptr;
-        node_t *right = nullptr;
-        int next = 0;
+        int left = -1;
+        int right = -1;
+        int next = -1;
 };
 
 struct tree_t {
         node_t *nodes = nullptr;
-        node_t *root = nullptr;
+        int root = -1;
         int cap = 0;
         int free = 0;
 };
@@ -26,16 +26,16 @@ void
 tree_ctor(tree_t *tree, int cap);
 // Initializes node.
 void
-node_init(tree_t *tree, node_t **parent, data_t data);
+node_init(tree_t *tree, int *ptr, data_t data);
 // Bounds two nodes.
 void
-node_bound(node_t **parent, node_t *node);
+node_bound(int *parent, int node);
 // Finds node in a tree.
 void
 node_find(node_t *node);
 // Dectructs node.
 void
-node_dtor(tree_t *tree, node_t *node);
+node_dtor(tree_t *tree, int pos);
 
 #endif // TREE_H
 

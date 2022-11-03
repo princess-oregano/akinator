@@ -3,83 +3,112 @@
 #include <string.h>
 #include <assert.h>
 #include "tree.h"
+#include "log.h"
 
 static void
-tree_resize(node_t **nodes, int cap)
+tree_resize(tree_t *tree, int new_cap)
 {
-        if (cap <= 0) {
+        log("Entered %s.\n", __PRETTY_FUNCTION__);
+
+        if (new_cap <= 0) {
                 fprintf(stderr, "Invalid cap.\n");
+                log("Error: Invalid capacity.\n"
+                    "Exiting %s.\n", __PRETTY_FUNCTION__);
+
+                return;
         }
-        node_t *tmp_nodes = (node_t *) realloc(*nodes, 
-                            (size_t) cap * sizeof(node_t));
+        node_t *tmp_nodes = (node_t *) realloc(tree->nodes, 
+                            (size_t) new_cap * sizeof(node_t));
 
         if (tmp_nodes == nullptr) {
                 fprintf(stderr, "Error: Couldn't allocate memory "
                                 "for nodes.\n");
+                log("Error: Couldn't allocate memory for nodes.\n"
+                    "Exiting %s.\n", __PRETTY_FUNCTION__);
                 return;
         } 
 
-        *nodes = tmp_nodes;
+        tree->nodes = tmp_nodes;
+
+        for (int i = tree->cap; i < new_cap; i++) {
+                memset(&tree->nodes[i].data, DATA_POISON, sizeof(data_t));
+                tree->nodes[i].left = -1;
+                tree->nodes[i].right = -1;
+                tree->nodes[i].next = i + 1; 
+        }
+
+        tree->nodes[tree->cap].next = tree->cap + 1;
+        tree->cap = new_cap;
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
 tree_ctor(tree_t *tree, int cap)
 {
-        tree_resize(&tree->nodes, cap);
+        log("Entered %s.\n", __PRETTY_FUNCTION__);
 
-        for (int i = tree->cap; i < cap; i++) {
-                memset(&tree->nodes[i].data, DATA_POISON, sizeof(data_t));
-                tree->nodes[i].left = nullptr;
-                tree->nodes[i].right = nullptr;
-                tree->nodes[i].next = i + 1; 
-        }
+        tree_resize(tree, cap);
 
-        tree->nodes[cap - 1].next = -1;
-
-        tree->cap = cap;
         tree->free = 0;
+                
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
-node_init(tree_t *tree, node_t **parent, data_t data)
+node_init(tree_t *tree, int *ptr, data_t data)
 {
-        assert(tree);
-        
-        if (tree->free == tree->cap - 1)
-                tree_resize(&tree->nodes, tree->cap * 2);  
+        log("Entered %s.\n", __PRETTY_FUNCTION__);
 
-        node_bound(parent, &tree->nodes[tree->free]);
+        assert(tree);
 
         tree->nodes[tree->free].data = data;
+        node_bound(ptr, tree->free);
         tree->free = tree->nodes[tree->free].next;
+
+        if (tree->free >= tree->cap) {
+                log("Free = %d, capacity = %d\n", tree->free, tree->cap);
+                log("Resizing...\n");
+                tree_resize(tree, tree->cap * 2);  
+        }
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
-node_bound(node_t **parent, node_t *node)
+node_bound(int *parent, int node)
 {
-        assert(parent);
-        assert(node);
+        log("Entered %s.\n", __PRETTY_FUNCTION__);
 
-        if (*parent != nullptr) {
+        assert(parent);
+
+        if (*parent != -1) {
+                log("Warning: pointer is already initialized.\n"
+                    "Bounding may lead to loss of data.n");
                 fprintf(stderr, "Warning: pointer is already initialized.\n"
                                 "Bounding may lead to loss of data.\n");
         }
 
         *parent = node;
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
-node_dtor(tree_t *tree, node_t *node)
+node_dtor(tree_t *tree, int pos)
 {
+        log("Entered %s.\n", __PRETTY_FUNCTION__);
+
         assert(tree);
-        assert(node);
 
-        memset(&node->data, DATA_POISON, sizeof(data_t));
+        memset(&tree->nodes[pos].data, DATA_POISON, sizeof(data_t));
 
-        node->left = nullptr;
-        node->right = nullptr;
+        tree->nodes[pos].left = -1;
+        tree->nodes[pos].right = -1;
 
-        node->next = tree->free;
-        tree->free = (int) (node - tree->nodes);
+        tree->nodes[pos].next = tree->free;
+        tree->free = pos;
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
