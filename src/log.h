@@ -11,7 +11,7 @@ void
 log(const char *format, ...);
 // Return file pointer of current log file stream.
 FILE *
-get_logfile_ptr();
+get_logfile();
 // Includes graphic object into log file.
 void
 include_graph(const char *path);

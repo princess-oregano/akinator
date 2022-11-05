@@ -3,15 +3,13 @@
 
 typedef int data_t;
 
-const int CAP = 100;
-const data_t DATA_POISON = 0xBE;
-const int    NEXT_POISON = 0xAE;
+const data_t TREE_DATA_POISON = 0xBE;
 
 struct node_t {
         data_t data {};
         int left = -1;
         int right = -1;
-        int next = -1;
+        int next_free = -1;
 };
 
 struct tree_t {
@@ -24,18 +22,21 @@ struct tree_t {
 // Constructs tree with 'cap' free unbounded nodes.
 void
 tree_ctor(tree_t *tree, int cap);
-// Initializes node.
+// Insert a node with given data to given position.
 void
-node_init(tree_t *tree, int *ptr, data_t data);
+node_insert(tree_t *tree, int *parent, data_t data);
 // Bounds two nodes.
-void
+void                                  // Think pls.
 node_bound(int *parent, int node);
 // Finds node in a tree.
 void
 node_find(node_t *node);
-// Dectructs node.
+// Removes node and all children of it.
 void
-node_dtor(tree_t *tree, int pos);
+node_remove(tree_t *tree, int *pos);
+// Destructs tree.
+void
+tree_dtor(tree_t *tree);
 
 #endif // TREE_H
 

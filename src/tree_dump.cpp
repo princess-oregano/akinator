@@ -8,11 +8,9 @@
 #include "tree_dump.h"
 #include "log.h"
 
-const int FILENAME_SIZE = 100;
-
 // Stream of dump output.
 FILE *DMP_STREAM = nullptr;
-char PNG_FILENAME[FILENAME_SIZE] = {};
+char DOT_FILENAME[FILENAME_MAX] = {};
 
 // Opens a graphviz file to write dump to.
 static void
@@ -30,12 +28,13 @@ open_graph_dump()
         char filename[] = "dmp/DUMP_XXXXXX";
 
         DMP_STREAM = fdopen(mkstemp(filename), "w");
-        if (strlen(filename) >= FILENAME_SIZE) {
+        setvbuf(DMP_STREAM, nullptr, _IONBF, 0);
+        if (strlen(filename) >= FILENAME_MAX) {
                 fprintf(stderr, "Filename is too long.\n");
                 return;
         }
 
-        memcpy(PNG_FILENAME, filename, strlen(filename) + 1);
+        memcpy(DOT_FILENAME, filename, strlen(filename) + 1);
 }
 
 // Calls system function, but is used like printf-like functions.
@@ -62,21 +61,19 @@ system_wformat(const char *format, ...)
 }
 
 // Genetares .png image from given dot code.
-static void
+static void  // Return char *.
 generate_graph()
 {
-        char *new_filename = (char *) calloc (FILENAME_SIZE, sizeof(char));
+        char *new_filename = (char *) calloc (FILENAME_MAX, sizeof(char));
         if (new_filename == nullptr) {
                 fprintf(stderr, "Couldn't allocate memory.\n");
                 return;
         }
 
-        new_filename = strcat(new_filename, PNG_FILENAME);
+        new_filename = strcat(new_filename, DOT_FILENAME);
         new_filename = strcat(new_filename, ".png");
 
-        fprintf(stderr, "%s -> %s\n", PNG_FILENAME, new_filename);
-
-        system_wformat("%s %s %s %s", "dot -Tpng", PNG_FILENAME, ">", new_filename);
+        system_wformat("%s %s %s %s", "dot -Tpng", DOT_FILENAME, ">", new_filename);
 
         include_graph(new_filename);
 

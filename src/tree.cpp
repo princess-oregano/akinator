@@ -32,13 +32,13 @@ tree_resize(tree_t *tree, int new_cap)
         tree->nodes = tmp_nodes;
 
         for (int i = tree->cap; i < new_cap; i++) {
-                memset(&tree->nodes[i].data, DATA_POISON, sizeof(data_t));
+                memset(&tree->nodes[i].data, TREE_DATA_POISON, sizeof(data_t));
                 tree->nodes[i].left = -1;
                 tree->nodes[i].right = -1;
-                tree->nodes[i].next = i + 1;
+                tree->nodes[i].next_free = i + 1;
         }
 
-        tree->nodes[tree->cap].next = tree->cap + 1;
+        tree->nodes[tree->cap].next_free = tree->cap + 1;
         tree->cap = new_cap;
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
@@ -57,15 +57,15 @@ tree_ctor(tree_t *tree, int cap)
 }
 
 void
-node_init(tree_t *tree, int *ptr, data_t data)
+node_insert(tree_t *tree, int *parent, data_t data)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
 
         assert(tree);
 
         tree->nodes[tree->free].data = data;
-        node_bound(ptr, tree->free);
-        tree->free = tree->nodes[tree->free].next;
+        node_bound(parent, tree->free);
+        tree->free = tree->nodes[tree->free].next_free;
 
         if (tree->free >= tree->cap) {
                 log("Free = %d, capacity = %d\n", tree->free, tree->cap);
@@ -83,7 +83,7 @@ node_bound(int *parent, int node)
 
         assert(parent);
 
-        if (*parent != -1) {
+        if (*parent != -1 && node != 0) {
                 log("Warning: pointer is already initialized.\n"
                     "Bounding may lead to loss of data.n");
                 fprintf(stderr, "Warning: pointer is already initialized.\n"
@@ -96,20 +96,39 @@ node_bound(int *parent, int node)
 }
 
 void
-node_dtor(tree_t *tree, int pos)
+node_remove(tree_t *tree, int *pos)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
 
         assert(tree);
 
-        memset(&tree->nodes[pos].data, DATA_POISON, sizeof(data_t));
+        memset(&tree->nodes[*pos].data, TREE_DATA_POISON, sizeof(data_t));
 
-        tree->nodes[pos].left = -1;
-        tree->nodes[pos].right = -1;
+        if (tree->nodes[*pos].left != -1)
+                node_remove(tree, &tree->nodes[*pos].left);
 
-        tree->nodes[pos].next = tree->free;
-        tree->free = pos;
+        if (tree->nodes[*pos].right != -1)
+                node_remove(tree, &tree->nodes[*pos].right);
+
+        tree->nodes[*pos].left = -1;
+        tree->nodes[*pos].right = -1;
+
+        tree->nodes[*pos].next_free = tree->free;
+        tree->free = *pos;
+
+        *pos = -1;
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+}
+
+void
+tree_dtor(tree_t *tree)
+{
+        node_remove(tree, &tree->root);
+        free(tree->nodes);
+
+        tree->root = -1;
+        tree->cap = -1;
+        tree->free = -1;
 }
 

@@ -4,6 +4,20 @@
 #include "tree.h"
 #include "log.h"
 
+static void
+init_rec(tree_t *tree, int *parent, data_t data, int depth)
+{
+        if (depth == 0)
+                return;
+
+        tree_graph_dump(tree);
+
+        node_insert(tree, parent, data);
+
+        init_rec(tree, &tree->nodes[*parent].left,  data, depth - 1);
+        init_rec(tree, &tree->nodes[*parent].right, data, depth - 1);
+}
+
 int
 main()
 {
@@ -14,26 +28,18 @@ main()
 
         tree_ctor(&tree, cap);
 
-        node_init(&tree, &tree.root, 3);
-        node_init(&tree, &tree.nodes[tree.root].left, 4);
-        node_init(&tree, &tree.nodes[tree.root].right, 2);
-        node_init(&tree, &tree.nodes[tree.nodes[tree.root].right].left, 56);
-
-        fprintf(stderr, "root = %d, root.left = %d, root.right = %d\n",
-                tree.nodes[tree.root].data,
-                tree.nodes[tree.nodes[tree.root].left].data,
-                tree.nodes[tree.nodes[tree.root].right].data);
+        init_rec(&tree, &tree.root, 5, 3);
 
         tree_graph_dump(&tree);
 
-        node_dtor(&tree, tree.nodes[tree.root].left);
-        node_dtor(&tree, tree.nodes[tree.root].right);
-        node_dtor(&tree, tree.root);
+        node_remove(&tree, &tree.nodes[tree.root].left);
 
-        free(tree.nodes);
+        tree_graph_dump(&tree);
 
+        tree_dtor(&tree);
 
         close_log();
+
         return 0;
 }
 

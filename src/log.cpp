@@ -7,11 +7,10 @@
 #include <stdarg.h>
 #include "log.h"
 
-const int MAX_FILE_NAME_SIZE = 100;
 // Stream to print log to.
 FILE *LOGSTREAM = nullptr;
 
-void
+void   // Add log_warning and log_error. Timestapms(log_time).
 log(const char *format, ...)
 {
         if (LOGSTREAM == nullptr)
@@ -64,6 +63,8 @@ void
 open_log(const char *filename)
 {
         LOGSTREAM = fopen(filename, "w");
+        setvbuf(LOGSTREAM, nullptr, _IONBF, 0);
+
         if (LOGSTREAM == nullptr) {
                 fprintf(stderr, "Couldn't open log file.\n");
                 return;
@@ -73,7 +74,7 @@ open_log(const char *filename)
 }
 
 FILE *
-get_logfile_ptr()
+get_logfile()
 {
         return LOGSTREAM;
 }
@@ -93,7 +94,7 @@ include_graph(const char *path)
                 return;
         }
 
-        log("<img src=%s width = 1200/>\n\n", path);
+        log("<img src=%s/>\n\n", path);
 }
 
 void
