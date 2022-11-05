@@ -17,7 +17,8 @@ tree_resize(tree_t *tree, int new_cap)
 
                 return;
         }
-        node_t *tmp_nodes = (node_t *) realloc(tree->nodes, 
+
+        node_t *tmp_nodes = (node_t *) realloc(tree->nodes,
                             (size_t) new_cap * sizeof(node_t));
 
         if (tmp_nodes == nullptr) {
@@ -26,7 +27,7 @@ tree_resize(tree_t *tree, int new_cap)
                 log("Error: Couldn't allocate memory for nodes.\n"
                     "Exiting %s.\n", __PRETTY_FUNCTION__);
                 return;
-        } 
+        }
 
         tree->nodes = tmp_nodes;
 
@@ -34,7 +35,7 @@ tree_resize(tree_t *tree, int new_cap)
                 memset(&tree->nodes[i].data, DATA_POISON, sizeof(data_t));
                 tree->nodes[i].left = -1;
                 tree->nodes[i].right = -1;
-                tree->nodes[i].next = i + 1; 
+                tree->nodes[i].next = i + 1;
         }
 
         tree->nodes[tree->cap].next = tree->cap + 1;
@@ -51,7 +52,7 @@ tree_ctor(tree_t *tree, int cap)
         tree_resize(tree, cap);
 
         tree->free = 0;
-                
+
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
@@ -69,7 +70,7 @@ node_init(tree_t *tree, int *ptr, data_t data)
         if (tree->free >= tree->cap) {
                 log("Free = %d, capacity = %d\n", tree->free, tree->cap);
                 log("Resizing...\n");
-                tree_resize(tree, tree->cap * 2);  
+                tree_resize(tree, tree->cap * 2);
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);

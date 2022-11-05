@@ -16,7 +16,7 @@ struct node_t {
 
 struct tree_t {
         node_t *nodes = nullptr;
-        int root = -1;
+        int root = 0;
         int cap = 0;
         int free = 0;
 };
