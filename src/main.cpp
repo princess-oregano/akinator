@@ -30,11 +30,11 @@ main()
 
         init_rec(&tree, &tree.root, 5, 3);
 
-        tree_graph_dump(&tree);
+        include_graph(tree_graph_dump(&tree));
 
         node_remove(&tree, &tree.nodes[tree.root].left);
 
-        tree_graph_dump(&tree);
+        include_graph(tree_graph_dump(&tree));
 
         tree_dtor(&tree);
 

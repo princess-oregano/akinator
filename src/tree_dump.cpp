@@ -11,6 +11,7 @@
 // Stream of dump output.
 FILE *DMP_STREAM = nullptr;
 char DOT_FILENAME[FILENAME_MAX] = {};
+char PNG_FILENAME[FILENAME_MAX] = {};
 
 // Opens a graphviz file to write dump to.
 static void
@@ -61,23 +62,15 @@ system_wformat(const char *format, ...)
 }
 
 // Genetares .png image from given dot code.
-static void  // Return char *.
+static char *
 generate_graph()
 {
-        char *new_filename = (char *) calloc (FILENAME_MAX, sizeof(char));
-        if (new_filename == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory.\n");
-                return;
-        }
+        memcpy(PNG_FILENAME, DOT_FILENAME, strlen(DOT_FILENAME));
+        strcat(PNG_FILENAME, ".png");
 
-        new_filename = strcat(new_filename, DOT_FILENAME);
-        new_filename = strcat(new_filename, ".png");
+        system_wformat("%s %s %s %s", "dot -Tpng", DOT_FILENAME, ">", PNG_FILENAME);
 
-        system_wformat("%s %s %s %s", "dot -Tpng", DOT_FILENAME, ">", new_filename);
-
-        include_graph(new_filename);
-
-        free(new_filename);
+        return PNG_FILENAME;
 }
 
 static void
@@ -101,7 +94,7 @@ node_graph_dump(tree_t *tree, int curr, int prev)
                 node_graph_dump(tree, tree->nodes[curr].right, prev);
 }
 
-void
+char *
 tree_graph_dump(tree_t *tree)
 {
         open_graph_dump();
@@ -121,6 +114,6 @@ tree_graph_dump(tree_t *tree)
 
         fclose(DMP_STREAM);
 
-        generate_graph();
+        return generate_graph();
 }
 

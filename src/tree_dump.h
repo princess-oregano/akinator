@@ -4,7 +4,7 @@
 #include "tree.h"
 
 // Makes graph dump of tree.
-void
+char *
 tree_graph_dump(tree_t *tree);
 
 #endif // TREE_DUMP_H
