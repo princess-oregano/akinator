@@ -1,9 +1,9 @@
 #ifndef TREE_H
 #define TREE_H
 
-typedef int data_t;
+typedef char* data_t;
 
-const data_t TREE_DATA_POISON = 0xBE;
+const char* const TREE_DATA_POISON = "Nothing.";
 
 struct node_t {
         data_t data {};
