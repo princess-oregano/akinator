@@ -10,6 +10,8 @@ main()
         open_log("log.html");
         tree_t tree {};
 
+        tree_ctor(&tree, 100);
+
         ak_guess(&tree);
 
         tree_dtor(&tree);

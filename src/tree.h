@@ -3,7 +3,7 @@
 
 typedef char* data_t;
 
-const char* const TREE_DATA_POISON = "Nothing.";
+const char* const TREE_DATA_POISON = "nothing";
 
 struct node_t {
         data_t data {};
