@@ -7,34 +7,31 @@
 #include "tree_dump.h"
 #include "log.h"
 
-size_t DATA_SIZE = 100;
-size_t ANS_SIZE = 5;
-
-
 // Inserts a node to a tree with given data.
 static void
-ak_insert(tree_t *tree, int pos)
+ak_insert(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        fprintf(stderr, "What did you mean?\n");
+        fprintf(stream, "What did you mean?\n");
 
-        char *data = (char *) calloc (DATA_SIZE, sizeof(char));
+        char *data = nullptr;
+        size_t data_size = 0;
 
-        getline(&data, &DATA_SIZE, stdin);
-        data[strlen(data) - 1] = '\0';
+        data_size = getline(&data, &data_size, stdin);
+        data[data_size - 1] = '\0';
+
+        fprintf(stream, "What property differs %s from %s\n",
+                         data, tree->nodes[pos].data);
+
+        char *differ = nullptr;
+        size_t differ_size = 0;
+
+        differ_size = getline(&differ, &differ_size, stdin);
+        differ[differ_size - 1] = '\0';
 
         node_insert(tree, &tree->nodes[pos].right, tree->nodes[pos].data);
         node_insert(tree, &tree->nodes[pos].left, data);
-
-        fprintf(stderr, "What property differs %s from %s\n",
-        tree->nodes[tree->nodes[pos].left].data,
-        tree->nodes[tree->nodes[pos].right].data);
-
-        char *differ = (char *) calloc (DATA_SIZE, sizeof(char));
-
-        getline(&differ, &DATA_SIZE, stdin);
-        differ[strlen(differ) - 1] = '\0';
         tree->nodes[pos].data = differ;
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
@@ -50,14 +47,15 @@ ak_try(tree_t *tree, int pos, FILE *stream)
 
         fprintf(stream, "Is it %s?\n", tree->nodes[pos].data);
 
-        char *answer = (char *) calloc(ANS_SIZE, sizeof(char));
+        char *answer = nullptr;
+        size_t answer_size = 0;
 
-        getline(&answer, &ANS_SIZE, stdin);
-        answer[strlen(answer) - 1] = '\0';
+        answer_size = getline(&answer, &answer_size, stdin);
+        answer[answer_size - 1] = '\0';
 
-        if (strcmp(answer, "yes") == 0)
+        if (strcmp(answer, ANS_AGREE) == 0)
                 ret_val = true;
-        else if (strcmp(answer, "no") == 0)
+        else if (strcmp(answer, ANS_DISAGREE) == 0)
                 ret_val = false;
         else
                 fprintf(stderr, "Invalid input.\n");
@@ -100,11 +98,11 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
 
         if (tree->nodes[*pos].left  == -1 &&
             tree->nodes[*pos].right == -1) {
-                if (ak_try(tree, *pos, stderr)) {
+                if (ak_try(tree, *pos, stdout)) {
                         fprintf(stream, "I knew that!\n");
                         guessed = true;
                 } else {
-                        ak_insert(tree, *pos);
+                        ak_insert(tree, *pos, stdout);
                         fprintf(stderr, "Fine!\nI'll try better next time.\n");
                         *pos = tree->root;
                 }
@@ -118,38 +116,34 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
 }
 
 static void
-ak_start(tree_t *tree)
+ak_start(tree_t *tree, FILE *stream)
 {
-        fprintf(stderr, "Enter the first property\n");
+        fprintf(stream, "Enter the first property\n");
 
-        char *data = (char *) calloc(100, sizeof(char));
-        if (data == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory.\n");
-        }
+        char *data = nullptr;
+        size_t data_size = 0;
 
-        getline(&data, &DATA_SIZE, stdin);
-        data[strlen(data) - 1] = '\0';
+        data_size = getline(&data, &data_size, stdin);
+        data[data_size - 1] = '\0';
 
         node_insert(tree, &tree->root, data);
 
-        fprintf(stderr, "Enter first two objects.\n");
+        fprintf(stream, "Enter first two objects.\n");
 
-        char *obj1 = (char *) calloc(100, sizeof(char));
-        if (obj1 == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory.\n");
-        }
+        char *obj1 = nullptr;
+        size_t obj1_size = 0;
 
-        getline(&obj1, &DATA_SIZE, stdin);
-        obj1[strlen(obj1) - 1] = '\0';
+        obj1_size = getline(&obj1, &obj1_size, stdin);
+        obj1[obj1_size - 1] = '\0';
+
         node_insert(tree, &tree->nodes[tree->root].left, obj1);
 
-        char *obj2 = (char *) calloc(100, sizeof(char));
-        if (obj2 == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory.\n");
-        }
+        char *obj2 = nullptr;
+        size_t obj2_size = 0;
 
-        getline(&obj2, &DATA_SIZE, stdin);
-        obj2[strlen(obj2) - 1] = '\0';
+        obj2_size = getline(&obj2, &obj2_size, stdin);
+        obj2[obj2_size - 1] = '\0';
+
         node_insert(tree, &tree->nodes[tree->root].right, obj2);
 
         include_graph(tree_graph_dump(tree));
@@ -175,7 +169,7 @@ ak_guess(tree_t *tree)
 
         assert(tree);
 
-        ak_start(tree);
+        ak_start(tree, stdout);
 
         int pos = tree->root;
         while(!ak_take_guess(tree, &pos, stderr)) {

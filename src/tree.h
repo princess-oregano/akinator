@@ -26,7 +26,7 @@ tree_ctor(tree_t *tree, int cap);
 void
 node_insert(tree_t *tree, int *parent, data_t data);
 // Bounds two nodes.
-void                                  // Think pls.
+void
 node_bound(int *parent, int node);
 // Finds node in a tree.
 void

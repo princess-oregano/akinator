@@ -61,7 +61,9 @@ node_insert(tree_t *tree, int *parent, data_t data)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
 
-        assert(tree);
+        assert(tree); 
+        assert(parent);
+        assert(*parent >= -1);
 
         tree->nodes[tree->free].data = data;
         node_bound(parent, tree->free);

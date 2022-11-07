@@ -3,6 +3,9 @@
 
 #include "tree.h"
 
+const char *const ANS_AGREE = "yes";
+const char *const ANS_DISAGREE = "no";
+
 // Builds tree from a given database file.
 void
 ak_restore(char *filename);

@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "tree_dump.h"
+#include "system.h"
 #include "log.h"
 
 // Stream of dump output.
-FILE *DMP_STREAM = nullptr;
-char DOT_FILENAME[FILENAME_MAX] = {};
-char PNG_FILENAME[FILENAME_MAX] = {};
+static FILE *DMP_STREAM = nullptr; // static?
+static char DOT_FILENAME[FILENAME_MAX] = {};
+static char PNG_FILENAME[FILENAME_MAX] = {};
 
 // Opens a graphviz file to write dump to.
 static void
@@ -30,35 +30,8 @@ open_graph_dump()
 
         DMP_STREAM = fdopen(mkstemp(filename), "w");
         setvbuf(DMP_STREAM, nullptr, _IONBF, 0);
-        if (strlen(filename) >= FILENAME_MAX) {
-                fprintf(stderr, "Filename is too long.\n");
-                return;
-        }
 
         memcpy(DOT_FILENAME, filename, strlen(filename) + 1);
-}
-
-// Calls system function, but is used like printf-like functions.
-static void
-system_wformat(const char *format, ...)
-{
-        va_list arglist;
-
-        va_start(arglist, format);
-
-        char *cmd = (char *) calloc(255, sizeof(char));
-        if (cmd == nullptr) {
-                fprintf(stderr, "Couldn't allocate memory for system cmd.\n");
-                va_end(arglist);
-                return;
-        }
-
-        vsprintf(cmd, format, arglist);
-        system(cmd);
-
-        va_end(arglist);
-
-        free(cmd);
 }
 
 // Genetares .png image from given dot code.
@@ -73,6 +46,7 @@ generate_graph()
         return PNG_FILENAME;
 }
 
+// Creates a graphviz dump of node and all nide's children.
 static void
 node_graph_dump(tree_t *tree, int curr, int prev)
 {
