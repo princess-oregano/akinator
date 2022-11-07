@@ -9,7 +9,7 @@
 #include "log.h"
 
 // Stream of dump output.
-static FILE *DMP_STREAM = nullptr; // static?
+static FILE *DMP_STREAM = nullptr;
 static char DOT_FILENAME[FILENAME_MAX] = {};
 static char PNG_FILENAME[FILENAME_MAX] = {};
 
