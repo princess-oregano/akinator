@@ -3,7 +3,7 @@ OBJDIR := obj
 
 SRC := main.cpp akinator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
-TARGET := tree
+TARGET := akinator
 
 CXX := g++
 CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
@@ -53,7 +53,7 @@ all: out run
 
 run:
 	printf "%s\n" "Running..."
-	./$(TARGET)
+	./$(TARGET) < test.txt
 	printf "%s\n" "Finished."
 
 out: $(OBJDIR) $(OBJ)

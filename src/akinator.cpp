@@ -7,6 +7,8 @@
 #include "tree_dump.h"
 #include "log.h"
 
+//////////////////////////////////GUESSER///////////////////////////////////////
+
 // Inserts a node to a tree with given data.
 static void
 ak_insert(tree_t *tree, int pos, FILE *stream)
@@ -176,8 +178,74 @@ ak_guess(tree_t *tree)
                 include_graph(tree_graph_dump(tree));
         }
 
+        ak_save(tree, "save.txt");
+
         ak_free(tree, tree->root);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
+////////////////////////////////END_GUESSER/////////////////////////////////////
+
+//////////////////////////////////SAVE_RESTORE//////////////////////////////////
+
+static void
+get_file(const char *filename, file_t *file, const char *mode)
+{
+        if ((file->stream = fopen(filename, mode)) == nullptr) {
+                fprintf(stderr, "Error: Couldn't open %s.\n", filename);
+
+                return;
+        }
+
+        if (stat(filename, &file->stats) != 0) {
+                fprintf(stderr, "Error: Coudn't get stats of %s.\n", filename);
+                return;
+        }
+}
+
+static void
+print_node(tree_t *tree, int pos, FILE *stream, int level)
+{
+        assert(tree);
+        assert(stream);
+
+        if (pos < 0)
+                return;
+
+        for (int i = 0; i < level; i++)
+                fprintf(stream, "        ");
+
+        level++;
+
+        fprintf(stream, "{%s", tree->nodes[pos].data);
+
+        if (tree->nodes[pos].left == -1 &&
+            tree->nodes[pos].left == -1) {
+                fprintf(stream, "}\n");
+        } else {
+                fprintf(stream, "\n");
+                print_node(tree, tree->nodes[pos].left,  stream, level);
+                print_node(tree, tree->nodes[pos].right, stream, level);
+                for (int i = 0; i < level - 1; i++)
+                        fprintf(stream, "        ");
+                fprintf(stream, "}\n");
+        }
+}
+
+void
+ak_save(tree_t *tree, const char *filename)
+{
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
+        file_t file;
+        get_file(filename, &file, "w");
+
+        setvbuf(file.stream, nullptr, _IOFBF, file.stats.st_blksize);
+
+        print_node(tree, tree->root, file.stream, 0);
+
+        fclose(file.stream);
+}
+
+///////////////////////////////END_SAVE_RESTORE/////////////////////////////////
