@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <sys/mman.h>
 #include "akinator.h"
 #include "tree.h"
 #include "tree_dump.h"
@@ -20,7 +21,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         char *data = nullptr;
         size_t data_size = 0;
 
-        data_size = getline(&data, &data_size, stdin);
+        data_size = (size_t) getline(&data, &data_size, stdin);
         data[data_size - 1] = '\0';
 
         fprintf(stream, "Какое свойство отличает %s от %s\n",
@@ -29,7 +30,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         char *differ = nullptr;
         size_t differ_size = 0;
 
-        differ_size = getline(&differ, &differ_size, stdin);
+        differ_size = (size_t) getline(&differ, &differ_size, stdin);
         differ[differ_size - 1] = '\0';
 
         node_insert(tree, &tree->nodes[pos].right, tree->nodes[pos].data);
@@ -52,7 +53,7 @@ ak_try(tree_t *tree, int pos, FILE *stream)
         char *answer = nullptr;
         size_t answer_size = 0;
 
-        answer_size = getline(&answer, &answer_size, stdin);
+        answer_size = (size_t) getline(&answer, &answer_size, stdin);
         answer[answer_size - 1] = '\0';
 
         if (strcmp(answer, ANS_AGREE) == 0)
@@ -126,7 +127,7 @@ ak_start(tree_t *tree, FILE *stream)
         char *data = nullptr;
         size_t data_size = 0;
 
-        data_size = getline(&data, &data_size, stdin);
+        data_size = (size_t) getline(&data, &data_size, stdin);
         data[data_size - 1] = '\0';
 
         node_insert(tree, &tree->root, data);
@@ -136,7 +137,7 @@ ak_start(tree_t *tree, FILE *stream)
         char *obj1 = nullptr;
         size_t obj1_size = 0;
 
-        obj1_size = getline(&obj1, &obj1_size, stdin);
+        obj1_size = (size_t) getline(&obj1, &obj1_size, stdin);
         obj1[obj1_size - 1] = '\0';
 
         node_insert(tree, &tree->nodes[tree->root].left, obj1);
@@ -146,7 +147,7 @@ ak_start(tree_t *tree, FILE *stream)
         char *obj2 = nullptr;
         size_t obj2_size = 0;
 
-        obj2_size = getline(&obj2, &obj2_size, stdin);
+        obj2_size = (size_t) getline(&obj2, &obj2_size, stdin);
         obj2[obj2_size - 1] = '\0';
 
         node_insert(tree, &tree->nodes[tree->root].right, obj2);
@@ -208,6 +209,22 @@ get_file(const char *filename, file_t *file, const char *mode)
 }
 
 static void
+read_file(char *buffer, file_t *file)
+{
+        assert(buffer);
+        assert(file);
+
+        buffer = (char *) mmap(NULL, (size_t) file->stats.st_size, PROT_READ,
+                               MAP_PRIVATE, fileno(file->stream), 0);
+
+        if (buffer == MAP_FAILED) {
+
+                fprintf(stderr, "Error: Couldn't allocate memory.\n");
+                return;
+        }
+}
+
+static void
 print_node(tree_t *tree, int pos, FILE *stream, int level)
 {
         assert(tree);
@@ -223,8 +240,8 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
 
         fprintf(stream, "{%s", tree->nodes[pos].data);
 
-        if (tree->nodes[pos].left == -1 &&
-            tree->nodes[pos].left == -1) {
+        if (tree->nodes[pos].left  == -1 &&
+            tree->nodes[pos].right == -1) {
                 fprintf(stream, "}\n");
         } else {
                 fprintf(stream, "\n");
@@ -244,11 +261,21 @@ ak_save(tree_t *tree, const char *filename)
         file_t file;
         get_file(filename, &file, "w");
 
-        setvbuf(file.stream, nullptr, _IOFBF, file.stats.st_blksize);
+        setvbuf(file.stream, nullptr, _IOFBF, (size_t) file.stats.st_blksize);
 
         print_node(tree, tree->root, file.stream, 0);
 
         fclose(file.stream);
+}
+
+void
+af_restore(tree_t *tree, const char *filename)
+{
+        file_t file;
+        get_file(filename, &file, "r");
+
+        char *buffer = nullptr;
+        read_file(buffer, &file);
 }
 
 ///////////////////////////////END_SAVE_RESTORE/////////////////////////////////

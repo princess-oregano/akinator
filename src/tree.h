@@ -1,19 +1,17 @@
 #ifndef TREE_H
 #define TREE_H
 
-typedef char* data_t;
+typedef char* tree_data_t;
 
-const char* const TREE_DATA_POISON = "nothing";
-
-struct node_t {
-        data_t data {};
+struct tree_node_t {
+        tree_data_t data {};
         int left = -1;
         int right = -1;
         int next_free = -1;
 };
 
 struct tree_t {
-        node_t *nodes = nullptr;
+        tree_node_t *nodes = nullptr;
         int root = 0;
         int cap = 0;
         int free = 0;
@@ -24,13 +22,13 @@ void
 tree_ctor(tree_t *tree, int cap);
 // Insert a node with given data to given position.
 void
-node_insert(tree_t *tree, int *parent, data_t data);
+node_insert(tree_t *tree, int *parent, tree_data_t data);
 // Bounds two nodes.
 void
 node_bound(int *parent, int node);
 // Finds node in a tree.
 void
-node_find(node_t *node);
+node_find(tree_node_t *node);
 // Removes node and all children of it.
 void
 node_remove(tree_t *tree, int *pos);
