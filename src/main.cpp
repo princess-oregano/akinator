@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "akinator.h"
+#include "tree_dump.h"
 #include "tree.h"
 #include "log.h"
 
@@ -12,7 +13,9 @@ main()
 
         tree_ctor(&tree, 100);
 
-        ak_guess(&tree);
+        ak_restore(&tree, "save.txt");
+
+        include_graph(tree_graph_dump(&tree));
 
         tree_dtor(&tree);
 

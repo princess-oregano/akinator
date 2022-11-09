@@ -15,7 +15,7 @@ struct file_t {
 
 // Builds tree from a given database file.
 void
-af_restore(tree_t *tree, const char *filename);
+ak_restore(tree_t *tree, const char *filename);
 // Saves tree to a database file.
 void
 ak_save(tree_t *tree, const char *filename);

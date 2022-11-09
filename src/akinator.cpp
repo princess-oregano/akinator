@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/mman.h>
 #include "akinator.h"
 #include "tree.h"
@@ -193,9 +194,35 @@ ak_guess(tree_t *tree)
 
 //////////////////////////////////SAVE_RESTORE//////////////////////////////////
 
+static int
+get_delim_buf(char **line, int delim, char *buffer)
+{
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
+        int count = 0;
+        for (count = 0; buffer[count] != delim; count++)
+                ;
+
+        *line = (char *) calloc (count + 1, sizeof(char));
+        if (*line == nullptr) {
+                log("Couldn't allocate memory.\n");
+                return 0;
+        }
+
+        for (int i = 0; i < count; i++) {
+                (*line)[i] = buffer[i];
+        }
+
+        return count;
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
+}
+
 static void
 get_file(const char *filename, file_t *file, const char *mode)
 {
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
         if ((file->stream = fopen(filename, mode)) == nullptr) {
                 fprintf(stderr, "Error: Couldn't open %s.\n", filename);
 
@@ -206,27 +233,33 @@ get_file(const char *filename, file_t *file, const char *mode)
                 fprintf(stderr, "Error: Coudn't get stats of %s.\n", filename);
                 return;
         }
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 static void
-read_file(char *buffer, file_t *file)
+read_file(char **buffer, file_t *file)
 {
-        assert(buffer);
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
         assert(file);
 
-        buffer = (char *) mmap(NULL, (size_t) file->stats.st_size, PROT_READ,
+        *buffer = (char *) mmap(NULL, (size_t) file->stats.st_size, PROT_READ,
                                MAP_PRIVATE, fileno(file->stream), 0);
 
-        if (buffer == MAP_FAILED) {
-
+        if (*buffer == MAP_FAILED) {
                 fprintf(stderr, "Error: Couldn't allocate memory.\n");
                 return;
         }
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 static void
 print_node(tree_t *tree, int pos, FILE *stream, int level)
 {
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
         assert(tree);
         assert(stream);
 
@@ -238,7 +271,7 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
 
         level++;
 
-        fprintf(stream, "{%s", tree->nodes[pos].data);
+        fprintf(stream, "{\'%s\'", tree->nodes[pos].data);
 
         if (tree->nodes[pos].left  == -1 &&
             tree->nodes[pos].right == -1) {
@@ -251,6 +284,8 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
                         fprintf(stream, "        ");
                 fprintf(stream, "}\n");
         }
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -266,16 +301,66 @@ ak_save(tree_t *tree, const char *filename)
         print_node(tree, tree->root, file.stream, 0);
 
         fclose(file.stream);
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
+}
+
+// Restores node from description from the buffer.
+static void
+build_node(tree_t *tree, char *buffer, int *pos)
+{
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
+        assert(tree);
+        assert(buffer);
+
+        char *data = nullptr;
+        char ch = '\0';
+        static int i = 0;
+
+        for ( ; isspace(ch = buffer[i]); i++)
+                ;
+
+        if (ch == '{') {
+                if ((ch = buffer[++i]) != '\'') {
+                        log("Invalid usage.\n");
+                        return;
+                }
+
+                i++;
+                i += get_delim_buf(&data, '\'', &buffer[i]) + 1;
+                fprintf(stderr, "%s\n", data);
+
+                node_insert(tree, pos, data); 
+
+                build_node(tree, buffer, &tree->nodes[*pos].left);
+                build_node(tree, buffer, &tree->nodes[*pos].right);
+
+                for ( ; isspace(ch = buffer[i]); i++)
+                        ;
+
+                if (ch == '}') {
+                        i++;
+                        return;
+                }
+        }
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 void
-af_restore(tree_t *tree, const char *filename)
+ak_restore(tree_t *tree, const char *filename)
 {
+        log("Entering %s.\n", __PRETTY_FUNCTION__);
+
         file_t file;
         get_file(filename, &file, "r");
 
         char *buffer = nullptr;
-        read_file(buffer, &file);
+        read_file(&buffer, &file);
+
+        build_node(tree, buffer, &tree->root);
+
+        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 ///////////////////////////////END_SAVE_RESTORE/////////////////////////////////
