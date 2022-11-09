@@ -15,7 +15,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        fprintf(stream, "What did you mean?\n");
+        fprintf(stream, "Что Вы имели в виду?\n");
 
         char *data = nullptr;
         size_t data_size = 0;
@@ -23,7 +23,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         data_size = getline(&data, &data_size, stdin);
         data[data_size - 1] = '\0';
 
-        fprintf(stream, "What property differs %s from %s\n",
+        fprintf(stream, "Какое свойство отличает %s от %s\n",
                          data, tree->nodes[pos].data);
 
         char *differ = nullptr;
@@ -47,7 +47,7 @@ ak_try(tree_t *tree, int pos, FILE *stream)
 
         bool ret_val = false;
 
-        fprintf(stream, "Is it %s?\n", tree->nodes[pos].data);
+        fprintf(stream, "Это %s?\n", tree->nodes[pos].data);
 
         char *answer = nullptr;
         size_t answer_size = 0;
@@ -101,26 +101,27 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
         if (tree->nodes[*pos].left  == -1 &&
             tree->nodes[*pos].right == -1) {
                 if (ak_try(tree, *pos, stdout)) {
-                        fprintf(stream, "I knew that!\n");
+                        fprintf(stream, "Я знала!\n");
                         guessed = true;
                 } else {
                         ak_insert(tree, *pos, stdout);
-                        fprintf(stderr, "Fine!\nI'll try better next time.\n");
+                        fprintf(stderr, "Ну и ладно...\n"
+                                        "В следующий раз постараюсь лучше...\n");
                         *pos = tree->root;
                 }
         } else {
                 ak_ask(tree, pos, stream);
         }
 
-        return guessed;
-
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return guessed;
 }
 
 static void
 ak_start(tree_t *tree, FILE *stream)
 {
-        fprintf(stream, "Enter the first property\n");
+        fprintf(stream, "Введите первое свойство\n");
 
         char *data = nullptr;
         size_t data_size = 0;
@@ -130,7 +131,7 @@ ak_start(tree_t *tree, FILE *stream)
 
         node_insert(tree, &tree->root, data);
 
-        fprintf(stream, "Enter first two objects.\n");
+        fprintf(stream, "Введите объект, соответствущий свойству\n");
 
         char *obj1 = nullptr;
         size_t obj1_size = 0;
@@ -139,6 +140,8 @@ ak_start(tree_t *tree, FILE *stream)
         obj1[obj1_size - 1] = '\0';
 
         node_insert(tree, &tree->nodes[tree->root].left, obj1);
+
+        fprintf(stream, "Введите объект, НЕ соответствущий свойству\n");
 
         char *obj2 = nullptr;
         size_t obj2_size = 0;

@@ -5,8 +5,8 @@
 #include <sys/stat.h>
 #include "tree.h"
 
-const char *const ANS_AGREE = "yes";
-const char *const ANS_DISAGREE = "no";
+const char *const ANS_AGREE = "да";
+const char *const ANS_DISAGREE = "нет";
 
 struct file_t {
         FILE  *stream = nullptr;
