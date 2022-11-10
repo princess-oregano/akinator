@@ -53,8 +53,8 @@ node_graph_dump(tree_t *tree, int curr, int prev)
         static int node_count = 1;
 
         fprintf(DMP_STREAM,
-        "node%d [label = \"%s\", shape = rect]\n",
-        node_count, tree->nodes[curr].data);
+        "node%d [label = \"%d\\n%s\", shape = rect]\n",
+        node_count, curr, tree->nodes[curr].data);
 
         fprintf(DMP_STREAM,
         "node%d -> node%d [arrowhead = none]\n", prev, node_count++);

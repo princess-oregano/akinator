@@ -18,8 +18,11 @@ main()
         print_hello();
         open_save(&tree, &save);
 
-        ak_guess(&tree, save.filename);
+        include_graph(tree_graph_dump(&tree));
 
+        ak_define(&tree, (char *) "полина", stdout);
+
+        ak_free(&tree, tree.root);
         tree_dtor(&tree);
 
         close_save(&tree, &save);

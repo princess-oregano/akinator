@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/mman.h>
+#include "stack.h"
 #include "akinator.h"
 #include "tree.h"
 #include "tree_dump.h"
@@ -120,8 +121,7 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
         return guessed;
 }
 
-// Frees all allocated for nodes data memory.
-static void
+void
 ak_free(tree_t *tree, int pos)
 {
         if (tree->nodes[pos].left != -1)
@@ -361,3 +361,64 @@ ak_restore(tree_t *tree, const char *filename)
 }
 
 ///////////////////////////////END_SAVE_RESTORE/////////////////////////////////
+
+/////////////////////////////////DEFINER////////////////////////////////////////
+
+// Finds leaf with data and fills definition stack.
+static void
+ak_find(tree_t *tree, tree_data_t data, int pos, stack_t *def)
+{
+        static bool found = false;
+
+        if (tree->nodes[pos].left == -1 &&
+            tree->nodes[pos].right == -1) {
+                if (strcmp(tree->nodes[pos].data, data) == 0) {
+                        found = true;
+                }
+
+                return;
+        }
+
+        if (found == true)
+                return;
+
+        stack_push(def, pos);
+
+        ak_find(tree, data, tree->nodes[pos].left, def);
+        ak_find(tree, data, tree->nodes[pos].right, def);
+
+        int pop_val = 0;
+        if (found == false)
+                stack_pop(def, &pop_val);
+}
+
+static void
+ak_print_def(tree_t *tree, stack_t *def, FILE *stream)
+{
+        int pos = 0;
+        while (def->size > 0) {
+                int new_pos = 0;
+                stack_pop(def, &new_pos);
+                if (tree->nodes[new_pos].right == pos)
+                        fprintf(stream, "не ");
+
+                fprintf(stream, "%s\n", tree->nodes[new_pos].data);
+
+                pos = new_pos;
+        }
+}
+
+void
+ak_define(tree_t *tree, tree_data_t data, FILE *stream)
+{
+        stack_t def = {};
+        stack_ctor(&def, 20, VAR_INFO(def));
+
+        ak_find(tree, data, tree->root, &def);
+
+        ak_print_def(tree, &def, stream);
+
+        stack_dtor(&def);
+}
+
+///////////////////////////////END_DEFINER//////////////////////////////////////

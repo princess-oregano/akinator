@@ -27,10 +27,13 @@ void
 ak_guess(tree_t *tree, const char *filename);
 // Gives a definition of an object.
 void
-ak_define(tree_t *tree);
+ak_define(tree_t *tree, tree_data_t data, FILE *stream);
 // Compares two objects.
 void
 ak_compare(tree_t *tree);
+// Frees all allocated for nodes data memory.
+void
+ak_free(tree_t *tree, int pos);
 
 #endif // AKINATOR_H
 

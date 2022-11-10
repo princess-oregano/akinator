@@ -1,7 +1,7 @@
 SRCDIR := src
 OBJDIR := obj
 
-SRC := main.cpp akinator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp UI.cpp
+SRC := main.cpp akinator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp UI.cpp stack.cpp error.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
 TARGET := akinator
 
