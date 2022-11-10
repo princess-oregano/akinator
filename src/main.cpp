@@ -4,21 +4,25 @@
 #include "tree_dump.h"
 #include "tree.h"
 #include "log.h"
+#include "UI.h"
 
 int
 main()
 {
         open_log("log.html");
+        game_save_t save = {};
         tree_t tree {};
 
         tree_ctor(&tree, 100);
 
-        ak_restore(&tree, "save.txt");
+        print_hello();
+        open_save(&tree, &save);
 
-        include_graph(tree_graph_dump(&tree));
+        ak_guess(&tree, save.filename);
 
         tree_dtor(&tree);
 
+        close_save(&tree, &save);
         close_log();
 
         return 0;

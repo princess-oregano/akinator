@@ -13,6 +13,9 @@ struct file_t {
         struct stat stats = {};
 };
 
+// Creates a basic tree for akinator.
+void
+ak_start(tree_t *tree, FILE *stream);
 // Builds tree from a given database file.
 void
 ak_restore(tree_t *tree, const char *filename);
@@ -21,7 +24,7 @@ void
 ak_save(tree_t *tree, const char *filename);
 // Guesses an object in a tree by asking questions to user.
 void
-ak_guess(tree_t *tree);
+ak_guess(tree_t *tree, const char *filename);
 // Gives a definition of an object.
 void
 ak_define(tree_t *tree);

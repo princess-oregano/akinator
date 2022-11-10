@@ -17,7 +17,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        fprintf(stream, "Что Вы имели в виду?\n");
+        fprintf(stream, "И что же Вы имели в виду?\n");
 
         char *data = nullptr;
         size_t data_size = 0;
@@ -25,7 +25,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         data_size = (size_t) getline(&data, &data_size, stdin);
         data[data_size - 1] = '\0';
 
-        fprintf(stream, "Какое свойство отличает %s от %s\n",
+        fprintf(stream, "Какое свойство отличает %s от %s?\n",
                          data, tree->nodes[pos].data);
 
         char *differ = nullptr;
@@ -103,12 +103,12 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
         if (tree->nodes[*pos].left  == -1 &&
             tree->nodes[*pos].right == -1) {
                 if (ak_try(tree, *pos, stdout)) {
-                        fprintf(stream, "Я знала!\n");
+                        fprintf(stream, "Я знала это с самого начала.\n");
                         guessed = true;
                 } else {
                         ak_insert(tree, *pos, stdout);
-                        fprintf(stderr, "Ну и ладно...\n"
-                                        "В следующий раз постараюсь лучше...\n");
+                        fprintf(stderr, "Ладно...\n"
+                                        "Я запомню.\n");
                         *pos = tree->root;
                 }
         } else {
@@ -118,42 +118,6 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 
         return guessed;
-}
-
-static void
-ak_start(tree_t *tree, FILE *stream)
-{
-        fprintf(stream, "Введите первое свойство\n");
-
-        char *data = nullptr;
-        size_t data_size = 0;
-
-        data_size = (size_t) getline(&data, &data_size, stdin);
-        data[data_size - 1] = '\0';
-
-        node_insert(tree, &tree->root, data);
-
-        fprintf(stream, "Введите объект, соответствущий свойству\n");
-
-        char *obj1 = nullptr;
-        size_t obj1_size = 0;
-
-        obj1_size = (size_t) getline(&obj1, &obj1_size, stdin);
-        obj1[obj1_size - 1] = '\0';
-
-        node_insert(tree, &tree->nodes[tree->root].left, obj1);
-
-        fprintf(stream, "Введите объект, НЕ соответствущий свойству\n");
-
-        char *obj2 = nullptr;
-        size_t obj2_size = 0;
-
-        obj2_size = (size_t) getline(&obj2, &obj2_size, stdin);
-        obj2[obj2_size - 1] = '\0';
-
-        node_insert(tree, &tree->nodes[tree->root].right, obj2);
-
-        include_graph(tree_graph_dump(tree));
 }
 
 // Frees all allocated for nodes data memory.
@@ -170,20 +134,18 @@ ak_free(tree_t *tree, int pos)
 }
 
 void
-ak_guess(tree_t *tree)
+ak_guess(tree_t *tree, const char *filename)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
         assert(tree);
-
-        ak_start(tree, stdout);
 
         int pos = tree->root;
         while(!ak_take_guess(tree, &pos, stderr)) {
                 include_graph(tree_graph_dump(tree));
         }
 
-        ak_save(tree, "save.txt");
+        ak_save(tree, filename);
 
         ak_free(tree, tree->root);
 
@@ -193,6 +155,42 @@ ak_guess(tree_t *tree)
 ////////////////////////////////END_GUESSER/////////////////////////////////////
 
 //////////////////////////////////SAVE_RESTORE//////////////////////////////////
+
+void
+ak_start(tree_t *tree, FILE *stream)
+{
+        fprintf(stream, "Скажи мне первое свойство\n");
+
+        char *data = nullptr;
+        size_t data_size = 0;
+
+        data_size = (size_t) getline(&data, &data_size, stdin);
+        data[data_size - 1] = '\0';
+
+        node_insert(tree, &tree->root, data);
+
+        fprintf(stream, "Какой объект обладает этим свойством?\n");
+
+        char *obj1 = nullptr;
+        size_t obj1_size = 0;
+
+        obj1_size = (size_t) getline(&obj1, &obj1_size, stdin);
+        obj1[obj1_size - 1] = '\0';
+
+        node_insert(tree, &tree->nodes[tree->root].left, obj1);
+
+        fprintf(stream, "А какой нет?\n");
+
+        char *obj2 = nullptr;
+        size_t obj2_size = 0;
+
+        obj2_size = (size_t) getline(&obj2, &obj2_size, stdin);
+        obj2[obj2_size - 1] = '\0';
+
+        node_insert(tree, &tree->nodes[tree->root].right, obj2);
+
+        include_graph(tree_graph_dump(tree));
+}
 
 static int
 get_delim_buf(char **line, int delim, char *buffer)
@@ -329,9 +327,8 @@ build_node(tree_t *tree, char *buffer, int *pos)
 
                 i++;
                 i += get_delim_buf(&data, '\'', &buffer[i]) + 1;
-                fprintf(stderr, "%s\n", data);
 
-                node_insert(tree, pos, data); 
+                node_insert(tree, pos, data);
 
                 build_node(tree, buffer, &tree->nodes[*pos].left);
                 build_node(tree, buffer, &tree->nodes[*pos].right);
