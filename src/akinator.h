@@ -5,8 +5,16 @@
 #include <sys/stat.h>
 #include "tree.h"
 
-const char *const ANS_AGREE = "да";
-const char *const ANS_DISAGREE = "нет";
+// Special codes for 'unusual' sutuations to use as 
+// return values or markers in functions.
+enum ak_codes {
+        AK_EXIT   = 0,
+        AK_NORMAL = 1,
+        AK_TRUE   = 2,
+        AK_FALSE  = 3,
+        AK_ERROR  = 4,
+        AK_RESTART = 5,
+};
 
 struct file_t {
         FILE  *stream = nullptr;

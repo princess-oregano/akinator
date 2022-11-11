@@ -20,9 +20,7 @@ main()
 
         include_graph(tree_graph_dump(&tree));
 
-        ak_define(&tree, (char *) "полина", stdout);
-
-        ak_compare(&tree, (char *) "полина", (char *) "юля", stdout);
+        ak_guess(&tree, save.filename);
 
         ak_free(&tree, tree.root);
         tree_dtor(&tree);

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include "akinator.h"
 #include "UI.h"
 
@@ -56,6 +58,33 @@ open_save(tree_t *tree, game_save_t *save)
 void
 close_save(tree_t *tree, game_save_t *save)
 {
+        assert(tree);
+        assert(save);
+
         free(save->filename);
         fclose(save->stream);
 }
+
+int
+ask(char **buf)
+{
+        assert(buf);
+
+        char *data = nullptr;
+        size_t buf_size = 0;
+
+        buf_size = getline(&data, &buf_size, stdin);
+        data[buf_size - 1] = '\0';
+
+        *buf = data;
+
+        if (strcmp(*buf, AGREE) == 0)
+                return ANS_TRUE;
+        else if (strcmp(*buf, DISAGREE) == 0)
+                return ANS_FALSE;
+        else if (strcmp(*buf, EXIT) == 0)
+                return ANS_EXIT;
+        else 
+                return ANS_LONG;
+}
+

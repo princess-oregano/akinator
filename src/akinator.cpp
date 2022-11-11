@@ -9,63 +9,102 @@
 #include "tree.h"
 #include "tree_dump.h"
 #include "log.h"
+#include "UI.h"
 
 //////////////////////////////////GUESSER///////////////////////////////////////
 
 // Inserts a node to a tree with given data.
-static void
+static int
 ak_insert(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
+        int ans = 0;
+
         fprintf(stream, "И что же Вы имели в виду?\n");
 
         char *data = nullptr;
-        size_t data_size = 0;
 
-        data_size = (size_t) getline(&data, &data_size, stdin);
-        data[data_size - 1] = '\0';
+        while ((ans = ask(&data)) != ANS_LONG) {
+                switch (ans) {
+                        case ANS_TRUE:
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Верх невежества!\n");
+                                return AK_EXIT;
+                        case ANS_LONG:
+                                break;
+                }
+        }
 
         fprintf(stream, "Какое свойство отличает %s от %s?\n",
                          data, tree->nodes[pos].data);
 
         char *differ = nullptr;
-        size_t differ_size = 0;
 
-        differ_size = (size_t) getline(&differ, &differ_size, stdin);
-        differ[differ_size - 1] = '\0';
+        while ((ans = ask(&differ)) != ANS_LONG) {
+                switch (ans) {
+                        case ANS_TRUE:
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Верх невежества!\n");
+                                return AK_EXIT;
+                        case ANS_LONG:
+                                break;
+                }
+        }
 
         node_insert(tree, &tree->nodes[pos].right, tree->nodes[pos].data);
         node_insert(tree, &tree->nodes[pos].left, data);
         tree->nodes[pos].data = differ;
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return AK_NORMAL;
 }
 
-// Prompts a question.
-static bool
-ak_try(tree_t *tree, int pos, FILE *stream)
+// Asks user to confirm(or not) the final guess.
+static int
+ak_ask_final(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        bool ret_val = false;
+        int ret_val = false;
 
-        fprintf(stream, "Это %s?\n", tree->nodes[pos].data);
+        char *data = nullptr;
+        int ans = ANS_LONG;
 
-        char *answer = nullptr;
-        size_t answer_size = 0;
+        while (ans == ANS_LONG) {
+                fprintf(stream, "Это %s?\n", tree->nodes[pos].data);
+                ans = ask(&data);
+                switch (ans) {
+                        case ANS_TRUE:
+                                ret_val = AK_TRUE;
+                                break;
+                        case ANS_FALSE:
+                                ret_val = AK_FALSE;
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Вы просто не хотите "
+                                                "признавать мою правоту!\n");
+                                return AK_EXIT;
+                                break;
+                        case ANS_LONG:
+                                fprintf(stream, "Неужели сложно ответить "
+                                                "да или нет?\n");
+                                break;
+                }
+        }
 
-        answer_size = (size_t) getline(&answer, &answer_size, stdin);
-        answer[answer_size - 1] = '\0';
-
-        if (strcmp(answer, ANS_AGREE) == 0)
-                ret_val = true;
-        else if (strcmp(answer, ANS_DISAGREE) == 0)
-                ret_val = false;
-        else
-                fprintf(stderr, "Invalid input.\n");
-
-        free(answer);
+        free(data);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 
@@ -73,52 +112,96 @@ ak_try(tree_t *tree, int pos, FILE *stream)
 }
 
 // Asks a user question about an object to navigate the tree.
-static void
-ak_ask(tree_t *tree, int *pos, FILE *stream)
+static int
+ak_navigate(tree_t *tree, int *pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        assert(tree);
+        bool ret_val = false;
 
-        if (ak_try(tree, *pos, stream))
-                *pos = tree->nodes[*pos].left;
-        else
-                *pos = tree->nodes[*pos].right;
+        fprintf(stream, "Это %s?\n", tree->nodes[*pos].data);
+
+        while (true) {
+                char *data = nullptr;
+                int ans = ask(&data);
+                switch (ans) {
+                        case ANS_TRUE:
+                                *pos = tree->nodes[*pos].left;
+                                free(data);
+                                return AK_TRUE;
+                                break;
+                        case ANS_FALSE:
+                                *pos = tree->nodes[*pos].right;
+                                free(data);
+                                return AK_FALSE;
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Верх невежества!\n");
+                                free(data);
+                                return AK_EXIT;
+                                break;
+                        case ANS_LONG:
+                                fprintf(stream, "Неужели сложно ответить "
+                                                "да или нет?\n");
+                                free(data);
+                                break;
+                }
+        }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return ret_val;
 }
 
-static bool
+static int
+ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
+{
+        switch (ak_ask_final(tree, *pos, stdout)) {
+                case AK_TRUE:
+                        fprintf(stream, "Я знала это с самого начала.\n");
+                        fprintf(stream, "Мне понравилась наша игра.\n"
+                                        "Попробуем еще раз.\n");
+                        *pos = tree->root;
+                        break;
+                case AK_FALSE:
+                        if (ak_insert(tree, *pos, stdout) == AK_EXIT)
+                                return AK_EXIT;
+                
+                        fprintf(stderr, "Ладно...\n"
+                                        "Я запомню.\n");
+                        *pos = tree->root;
+                        break;
+                case AK_EXIT:
+                        return AK_EXIT;
+                        break;
+        }
+
+        return AK_NORMAL;
+}
+
+static int
 ak_take_guess(tree_t *tree, int *pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        bool guessed = false;
-
         assert(tree);
         if (*pos < 0) {
                 fprintf(stderr, "Invalid *pos value.\n");
-                return false;
+                return AK_ERROR;
         }
 
         if (tree->nodes[*pos].left  == -1 &&
-            tree->nodes[*pos].right == -1) {
-                if (ak_try(tree, *pos, stdout)) {
-                        fprintf(stream, "Я знала это с самого начала.\n");
-                        guessed = true;
-                } else {
-                        ak_insert(tree, *pos, stdout);
-                        fprintf(stderr, "Ладно...\n"
-                                        "Я запомню.\n");
-                        *pos = tree->root;
-                }
+            tree->nodes[*pos].right ==-1) {
+                if (ak_take_final_guess(tree, pos, stream) == AK_EXIT)
+                        return AK_EXIT;
         } else {
-                ak_ask(tree, pos, stream);
+                if (ak_navigate(tree, pos, stream) == AK_EXIT)
+                        return AK_EXIT;
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 
-        return guessed;
+        return AK_NORMAL;
 }
 
 void
@@ -141,13 +224,11 @@ ak_guess(tree_t *tree, const char *filename)
         assert(tree);
 
         int pos = tree->root;
-        while(!ak_take_guess(tree, &pos, stderr)) {
-                include_graph(tree_graph_dump(tree));
-        }
+
+        while(ak_take_guess(tree, &pos, stderr) != AK_EXIT)
+                ;
 
         ak_save(tree, filename);
-
-        ak_free(tree, tree->root);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
@@ -159,7 +240,7 @@ ak_guess(tree_t *tree, const char *filename)
 void
 ak_start(tree_t *tree, FILE *stream)
 {
-        fprintf(stream, "Скажи мне первое свойство\n");
+        fprintf(stream, "Скажите мне первое свойство\n");
 
         char *data = nullptr;
         size_t data_size = 0;
