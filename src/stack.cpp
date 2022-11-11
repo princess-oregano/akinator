@@ -87,6 +87,7 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
         for (size_t i = 0; i < capacity; i++)
                 memset(&stack->data[i], DATA_POISON, sizeof(elem_t));
 #ifdef HASH
+
         stack->crc_hash = crc8(0, stack, sizeof(stack_t));
         stack->var_info = var_info;
 #endif
@@ -162,12 +163,12 @@ stack_dtor(stack_t *stack)
 }
 
 static void
-data_dump(stack_t stack)
+data_dump(stack_t *stack)
 {
         size_t i = 0;
 
-        for (i = 0; i < stack.capacity; i++) {
-                char *ch = (char *) &stack.data[i];
+        for (i = 0; i < stack->capacity; i++) {
+                char *ch = (char *) &stack->data[i];
                 for (size_t j = 0; j < sizeof(elem_t); j++) {
                         fprintf(stderr, "%02hhx ", *(ch + j));
                 }
@@ -176,7 +177,7 @@ data_dump(stack_t stack)
 }
 
 void
-stack_dump(stack_t stack, var_info_t cur_var_info)
+stack_dump(stack_t *stack, var_info_t cur_var_info)
 {
         fprintf(stderr,
                 "%s at %s(%d):\n"
@@ -187,10 +188,10 @@ stack_dump(stack_t stack, var_info_t cur_var_info)
                 "       data[%p]:\n",
                 cur_var_info.func_name, cur_var_info.file_name,
                 cur_var_info.line, cur_var_info.init_var_name,
-                &stack, stack.var_info.init_var_name,
-                stack.var_info.func_name, stack.var_info.file_name,
-                stack.var_info.line, ON_HASH(stack.crc_hash,) stack.size,
-                stack.capacity, stack.data);
+                stack, stack->var_info.init_var_name,
+                stack->var_info.func_name, stack->var_info.file_name,
+                stack->var_info.line, ON_HASH(stack->crc_hash,) stack->size,
+                stack->capacity, stack->data);
 
         data_dump(stack);
 }

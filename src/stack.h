@@ -82,7 +82,7 @@ long long
 stack_dtor(stack_t *stack);
 // Prints all available information about stack.
 void
-stack_dump(stack_t stack, var_info_t cur_var_info);
+stack_dump(stack_t *stack, var_info_t cur_var_info);
 // Checks condition of stack.
 long long
 verify_stack(stack_t *stack);

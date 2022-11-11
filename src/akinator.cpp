@@ -366,59 +366,125 @@ ak_restore(tree_t *tree, const char *filename)
 
 // Finds leaf with data and fills definition stack.
 static void
-ak_find(tree_t *tree, tree_data_t data, int pos, stack_t *def)
+ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found)
 {
-        static bool found = false;
-
         if (tree->nodes[pos].left == -1 &&
             tree->nodes[pos].right == -1) {
                 if (strcmp(tree->nodes[pos].data, data) == 0) {
-                        found = true;
+                        stack_push(def, pos);
+                        *found = true;
                 }
 
                 return;
         }
 
-        if (found == true)
+        if (*found == true)
                 return;
 
-        stack_push(def, pos);
-
-        ak_find(tree, data, tree->nodes[pos].left, def);
-        ak_find(tree, data, tree->nodes[pos].right, def);
-
-        int pop_val = 0;
-        if (found == false)
-                stack_pop(def, &pop_val);
+        ak_find(tree, data, tree->nodes[pos].left, def, found);
+        ak_find(tree, data, tree->nodes[pos].right, def, found);
+        if (*found == true)
+                stack_push(def, pos);
 }
 
 static void
-ak_print_def(tree_t *tree, stack_t *def, FILE *stream)
+ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
 {
+        if (def->size == 0)
+                return;
         int pos = 0;
+        stack_pop(def, &pos);
+        fprintf(stream, "%s:\n", data);
         while (def->size > 0) {
                 int new_pos = 0;
                 stack_pop(def, &new_pos);
-                if (tree->nodes[new_pos].right == pos)
+                if (tree->nodes[pos].right == new_pos)
                         fprintf(stream, "не ");
 
-                fprintf(stream, "%s\n", tree->nodes[new_pos].data);
+                fprintf(stream, "%s\n", tree->nodes[pos].data);
 
                 pos = new_pos;
         }
 }
 
 void
-ak_define(tree_t *tree, tree_data_t data, FILE *stream)
+ak_define(tree_t *tree, char *data, FILE *stream)
 {
         stack_t def = {};
         stack_ctor(&def, 20, VAR_INFO(def));
 
-        ak_find(tree, data, tree->root, &def);
+        bool found = false;
+        ak_find(tree, data, tree->root, &def, &found);
 
-        ak_print_def(tree, &def, stream);
+        ak_print_def(tree, data, &def, stream);
 
         stack_dtor(&def);
 }
 
 ///////////////////////////////END_DEFINER//////////////////////////////////////
+
+/////////////////////////////////COMPARATOR/////////////////////////////////////
+
+static void
+ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
+              char *obj1, char *obj2, FILE *stream)
+{
+        int pos1 = 0;
+        int pos2 = 0;
+
+        stack_pop(def1, &pos1);
+        stack_pop(def2, &pos2);
+
+        fprintf(stream, "Общие свойства:\n");
+
+        int new_pos1 = 0;
+        int new_pos2 = 0;
+        while (def1->size > 0 && def2->size > 0) {
+                stack_pop(def1, &new_pos1);
+                stack_pop(def2, &new_pos2);
+
+                if (new_pos1 != new_pos2)
+                        break;
+
+                if (tree->nodes[pos1].right == new_pos1)
+                        fprintf(stream, "не ");
+
+                fprintf(stream, "%s\n", tree->nodes[pos1].data);
+
+                pos1 = new_pos1;
+                pos2 = new_pos2;
+        }
+
+        stack_push(def1, new_pos1);
+        stack_push(def2, new_pos2);
+        stack_push(def1, pos1);
+        stack_push(def2, pos2);
+
+        fprintf(stream, "Различные свойства:\n");
+
+        ak_print_def(tree, obj1, def1, stream);
+        ak_print_def(tree, obj2, def2, stream);
+
+}
+
+void
+ak_compare(tree_t *tree, char *obj1, char *obj2, FILE *stream)
+{
+        stack_t def1 = {};
+        stack_t def2 = {};
+        stack_ctor(&def1, 10, VAR_INFO(def1));
+        stack_ctor(&def2, 10, VAR_INFO(def2));
+
+        bool found = false;
+        ak_find(tree, obj1, tree->root, &def1, &found);
+        found = false;
+        ak_find(tree, obj2, tree->root, &def2, &found);
+
+        ak_print_comp(tree, &def1, &def2, obj1, obj2, stream);
+
+        stack_dtor(&def1);
+        stack_dtor(&def2);
+}
+
+//////////////////////////////END_COMPARATOR////////////////////////////////////
+

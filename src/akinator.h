@@ -30,7 +30,7 @@ void
 ak_define(tree_t *tree, tree_data_t data, FILE *stream);
 // Compares two objects.
 void
-ak_compare(tree_t *tree);
+ak_compare(tree_t *tree, char *obj1, char *obj2, FILE *stream);
 // Frees all allocated for nodes data memory.
 void
 ak_free(tree_t *tree, int pos);

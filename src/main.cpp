@@ -22,6 +22,8 @@ main()
 
         ak_define(&tree, (char *) "полина", stdout);
 
+        ak_compare(&tree, (char *) "полина", (char *) "юля", stdout);
+
         ak_free(&tree, tree.root);
         tree_dtor(&tree);
 
