@@ -41,6 +41,8 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
@@ -66,11 +68,19 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
-        node_insert(tree, &tree->nodes[pos].right, tree->nodes[pos].data);
-        node_insert(tree, &tree->nodes[pos].left, data);
+        if (node_insert(tree, &tree->nodes[pos].right, tree->nodes[pos].data) != ERR_NO_ERR || 
+            node_insert(tree, &tree->nodes[pos].left, data) != ERR_NO_ERR) {
+                free(differ);
+                free(data);
+                fprintf(stream, "Спать хочется...\n");
+                return AK_ERROR;
+        }
+
         tree->nodes[pos].data = differ;
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
@@ -112,6 +122,8 @@ ak_ask_final(tree_t *tree, int pos, FILE *stream)
                                                 "да или нет?\n");
                                 free(data);
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
@@ -125,8 +137,6 @@ static int
 ak_navigate(tree_t *tree, int *pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
-
-        bool ret_val = false;
 
         fprintf(stream, "Это %s?\n", tree->nodes[*pos].data);
 
@@ -156,6 +166,8 @@ ak_navigate(tree_t *tree, int *pos, FILE *stream)
                                 fprintf(stream, "Это %s?\n", 
                                                 tree->nodes[*pos].data);
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
@@ -165,6 +177,7 @@ ak_navigate(tree_t *tree, int *pos, FILE *stream)
 static int
 ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
 {
+        int insert_ret = 0;
         switch (ak_ask_final(tree, *pos, stdout)) {
                 case AK_TRUE:
                         fprintf(stream, "Я знала это с самого начала.\n");
@@ -173,8 +186,11 @@ ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
                         *pos = tree->root;
                         break;
                 case AK_FALSE:
-                        if (ak_insert(tree, *pos, stdout) == AK_EXIT)
+                        insert_ret = ak_insert(tree, *pos, stdout);
+                        if (insert_ret == AK_EXIT)
                                 return AK_EXIT;
+                        if (insert_ret == AK_ERROR)
+                                return AK_ERROR;
                 
                         fprintf(stderr, "Ладно...\n"
                                         "Я запомню.\n");
@@ -183,6 +199,8 @@ ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
                 case AK_EXIT:
                         return AK_EXIT;
                         break;
+                default:
+                        assert(0 && "Invalid ask_final value.");
         }
 
         return AK_NORMAL;
@@ -269,6 +287,8 @@ ak_start(tree_t *tree, FILE *stream)
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
@@ -292,6 +312,8 @@ ak_start(tree_t *tree, FILE *stream)
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
@@ -316,12 +338,20 @@ ak_start(tree_t *tree, FILE *stream)
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
-        node_insert(tree, &tree->root, data);
-        node_insert(tree, &tree->nodes[tree->root].left, obj1);
-        node_insert(tree, &tree->nodes[tree->root].right, obj2);
+        if (node_insert(tree, &tree->root, data) != ERR_NO_ERR ||
+            node_insert(tree, &tree->nodes[tree->root].left, obj1) != ERR_NO_ERR ||
+            node_insert(tree, &tree->nodes[tree->root].right, obj2) != ERR_NO_ERR) {
+                free(data);
+                free(obj1);
+                free(obj2);
+                fprintf(stream, "Спать хочется...\n");
+                return AK_ERROR;
+        }
 
         include_graph(tree_graph_dump(tree));
 
@@ -333,7 +363,7 @@ get_delim_buf(char **line, int delim, char *buffer)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        int count = 0;
+        size_t count = 0;
         for ( ; buffer[count] != delim; count++)
                 ;
 
@@ -347,10 +377,10 @@ get_delim_buf(char **line, int delim, char *buffer)
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
         
-        return count;
+        return (int) count;
 }
 
-static void // ???
+static int
 get_file(const char *filename, file_t *file, const char *mode)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
@@ -358,18 +388,20 @@ get_file(const char *filename, file_t *file, const char *mode)
         if ((file->stream = fopen(filename, mode)) == nullptr) {
                 log("Error: Couldn't open %s.\n", filename);
 
-                return;
+                return AK_ERROR;
         }
 
         if (stat(filename, &file->stats) != 0) {
                 log("Error: Coudn't get stats of %s.\n", filename);
-                return;
+                return AK_ERROR;
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return AK_NORMAL;
 }
 
-static void // ???
+static int
 read_file(char **buffer, file_t *file)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
@@ -381,10 +413,12 @@ read_file(char **buffer, file_t *file)
 
         if (*buffer == MAP_FAILED) {
                 fprintf(stderr, "Error: Couldn't allocate memory.\n");
-                return;
+                return AK_ERROR;
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return AK_NORMAL;
 }
 
 static void
@@ -420,13 +454,14 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void // ???
+int
 ak_save(tree_t *tree, const char *filename)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
         file_t file;
-        get_file(filename, &file, "w");
+        if (get_file(filename, &file, "w") == AK_ERROR)
+                return AK_ERROR;
 
         setvbuf(file.stream, nullptr, _IOFBF, (size_t) file.stats.st_blksize);
 
@@ -435,6 +470,8 @@ ak_save(tree_t *tree, const char *filename)
         fclose(file.stream);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return AK_NORMAL;
 }
 
 // Restores node from description from the buffer.
@@ -478,20 +515,26 @@ build_node(tree_t *tree, char *buffer, int *pos)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void // ???
+int
 ak_restore(tree_t *tree, const char *filename)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
         file_t file;
-        get_file(filename, &file, "r");
+        if (get_file(filename, &file, "r") == AK_ERROR)
+                return AK_ERROR;
 
         char *buffer = nullptr;
-        read_file(&buffer, &file);
+        if (read_file(&buffer, &file) == AK_ERROR) {
+                free(buffer);
+                return AK_ERROR;
+        }
 
         build_node(tree, buffer, &tree->root);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+
+        return AK_NORMAL;
 }
 
 ///////////////////////////////END_SAVE_RESTORE/////////////////////////////////
@@ -499,13 +542,18 @@ ak_restore(tree_t *tree, const char *filename)
 /////////////////////////////////DEFINER////////////////////////////////////////
 
 // Finds leaf with data and fills definition stack.
-static bool /// ???
-ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found)
+static bool
+ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found, int *err)
 {
+        if (*err != 0) {
+                *found = false;
+                return *found;
+        }
+
         if (tree->nodes[pos].left == -1 &&
             tree->nodes[pos].right == -1) {
                 if (strcmp(tree->nodes[pos].data, data) == 0) {
-                        stack_push(def, pos); // ???
+                        *err = (int) stack_push(def, pos);
                         *found = true;
                 }
 
@@ -515,10 +563,10 @@ ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found)
         if (*found == true)
                 return *found;
 
-        ak_find(tree, data, tree->nodes[pos].left,  def, found);
-        ak_find(tree, data, tree->nodes[pos].right, def, found);
+        ak_find(tree, data, tree->nodes[pos].left,  def, found, err);
+        ak_find(tree, data, tree->nodes[pos].right, def, found, err);
         if (*found == true)
-                stack_push(def, pos); // ???
+                *err = (int) stack_push(def, pos);
 
         return *found;
 }
@@ -537,13 +585,14 @@ ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
                 if (tree->nodes[pos].right == new_pos)
                         fprintf(stream, "не ");
 
-                fprintf(stream, "%s\n", tree->nodes[pos].data);
+                fprintf(stream, "%s, ", tree->nodes[pos].data);
 
                 pos = new_pos;
         }
+        fprintf(stream, "\b\b.\n");
 }
 
-void
+int
 ak_define(tree_t *tree, FILE *stream)
 {
         stack_t def = {};
@@ -570,18 +619,24 @@ ak_define(tree_t *tree, FILE *stream)
                                 break;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
         bool found = false;
-        if (ak_find(tree, data, tree->root, &def, &found) == false) {
-                fprintf(stream, "Это... Превзошло мои ожидания.\n"
-                                "Я не знаю, что Вы имели в виду.\n");
+        int err = 0;
+        if (ak_find(tree, data, tree->root, &def, &found, &err) == false) {
+                if (err != 0)
+                        fprintf(stream, "Немного спать захотелось...\n");
+                else
+                        fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                        "Я не знаю, что Вы имели в виду.\n");
 
                 free(data);
                 stack_dtor(&def);
 
-                return;
+                return AK_NORMAL;
         }
 
         ak_print_def(tree, data, &def, stream);
@@ -589,6 +644,8 @@ ak_define(tree_t *tree, FILE *stream)
         free(data);
 
         stack_dtor(&def);
+
+        return AK_NORMAL;
 }
 
 ///////////////////////////////END_DEFINER//////////////////////////////////////
@@ -599,42 +656,48 @@ static void
 ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2, 
               char *obj1, char *obj2, FILE *stream)
 {
-        int pos1 = 0;
-        int pos2 = 0;
+        int pos1 = tree->root;
+        int pos2 = tree->root;
 
         stack_pop(def1, &pos1);
         stack_pop(def2, &pos2);
 
-        fprintf(stream, "Каждый из них\n");
-
-        int new_pos1 = 0;
-        int new_pos2 = 0;
-        while (def1->size > 0 && def2->size > 0) {
-                stack_pop(def1, &new_pos1);
-                stack_pop(def2, &new_pos2);
-
-                if (new_pos1 != new_pos2)
-                        break;
-
-                if (tree->nodes[pos1].right == new_pos1)
-                        fprintf(stream, "не ");
-
-                fprintf(stream, "%s\n", tree->nodes[pos1].data);
-
-                pos1 = new_pos1;
-                pos2 = new_pos2;
-        }
+        int new_pos1 = -1;
+        int new_pos2 = -1;
+        stack_pop(def1, &new_pos1);
+        stack_pop(def2, &new_pos2);
 
         stack_push(def1, new_pos1);
         stack_push(def2, new_pos2);
-        stack_push(def1, pos1);
-        stack_push(def2, pos2);
+        if (new_pos1 != new_pos2)
+                fprintf(stream, "Совсем не похожи!\n");
+        else {
+                fprintf(stream, "Каждый из них\n");
+                while (def1->size > 0 && def2->size > 0) {
+                        stack_pop(def1, &new_pos1);
+                        stack_pop(def2, &new_pos2);
 
-        fprintf(stream, "Но при этом\n");
+                        if (new_pos1 != new_pos2)
+                                break;
 
+                        if (tree->nodes[pos1].right == new_pos1)
+                                fprintf(stream, "не ");
+
+                        fprintf(stream, "%s\n", tree->nodes[pos1].data);
+
+                        pos1 = new_pos1;
+                        pos2 = new_pos2;
+                }
+                stack_push(def1, new_pos1);
+                stack_push(def2, new_pos2);
+                stack_push(def1, pos1);
+                stack_push(def2, pos2);
+
+                fprintf(stream, "Но при этом\n");
+
+        }
         ak_print_def(tree, obj1, def1, stream);
         ak_print_def(tree, obj2, def2, stream);
-
 }
 
 void
@@ -647,6 +710,8 @@ ak_compare(tree_t *tree, FILE *stream)
 
         char *obj1 = nullptr;
         char *obj2 = nullptr;
+
+        fprintf(stream, "Кого мне сравнить?\n");
 
         int ans = 0;
         while (ans != ANS_LONG) {
@@ -666,13 +731,19 @@ ak_compare(tree_t *tree, FILE *stream)
                                 break;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
         bool found = false;
-        if (ak_find(tree, obj1, tree->root, &def1, &found) == false) {
-                fprintf(stream, "Это... Превзошло мои ожидания.\n"
-                                "Я не знаю, что Вы имели в виду.\n");
+        int err = 0;
+        if (ak_find(tree, obj1, tree->root, &def1, &found, &err) == false) {
+                if (err != 0)
+                        fprintf(stream, "Немного спать захотелось...\n");
+                else
+                        fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                        "Я не знаю, что Вы имели в виду.\n");
                 
                 free(obj1);
                 stack_dtor(&def1);
@@ -680,6 +751,8 @@ ak_compare(tree_t *tree, FILE *stream)
 
                 return;
         }
+
+        fprintf(stream, "И с кем?\n");
 
         ans = 0;
         while (ans != ANS_LONG) {
@@ -699,13 +772,19 @@ ak_compare(tree_t *tree, FILE *stream)
                                 break;
                         case ANS_LONG:
                                 break;
+                        default:
+                                assert(0 && "Invalid ans value.");
                 }
         }
 
         found = false;
-        if (ak_find(tree, obj2, tree->root, &def2, &found) == false) {
-                fprintf(stream, "Это... Превзошло мои ожидания.\n"
-                                "Я не знаю, что Вы имели в виду.\n");
+        err = 0;
+        if (ak_find(tree, obj2, tree->root, &def2, &found, &err) == false) {
+                if (err != 0)
+                        fprintf(stream, "Немного спать захотелось...\n");
+                else
+                        fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                        "Я не знаю, что Вы имели в виду.\n");
               
                 free(obj1);
                 free(obj2);
@@ -715,7 +794,14 @@ ak_compare(tree_t *tree, FILE *stream)
                 return;
         }
 
-        ak_print_comp(tree, &def1, &def2, obj1, obj2, stream);
+        if (strcmp(obj1, obj2) == 0) {
+                fprintf(stream, "Это одно и то же!\n");
+        } else {
+                ak_print_comp(tree, &def1, &def2, obj1, obj2, stream);
+        }
+
+        free(obj1);
+        free(obj2);
 
         stack_dtor(&def1);
         stack_dtor(&def2);

@@ -5,6 +5,7 @@
 #include "error.h"
 #include "stack.h"
 
+#ifdef HASH
 static unsigned int
 crc8(unsigned int crc, void *data, size_t len)
 {
@@ -21,6 +22,7 @@ crc8(unsigned int crc, void *data, size_t len)
 
         return crc;
 }
+#endif
 
 static long long
 data_resize(stack_t *stack, size_t capacity)
@@ -89,8 +91,8 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
 #ifdef HASH
 
         stack->crc_hash = crc8(0, stack, sizeof(stack_t));
-        stack->var_info = var_info;
 #endif
+        stack->var_info = var_info;
         stack->capacity = capacity;
 
         return err.val;

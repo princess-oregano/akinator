@@ -13,7 +13,6 @@ enum ak_codes {
         AK_TRUE   = 2,
         AK_FALSE  = 3,
         AK_ERROR  = 4,
-        AK_RESTART = 5,
 };
 
 struct file_t {
@@ -25,16 +24,16 @@ struct file_t {
 int
 ak_start(tree_t *tree, FILE *stream);
 // Builds tree from a given database file.
-void
+int
 ak_restore(tree_t *tree, const char *filename);
 // Saves tree to a database file.
-void
+int
 ak_save(tree_t *tree, const char *filename);
 // Guesses an object in a tree by asking questions to user.
 void
 ak_guess(tree_t *tree, const char *filename);
 // Gives a definition of an object.
-void
+int
 ak_define(tree_t *tree, FILE *stream);
 // Compares two objects.
 void

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "akinator.h"
 #include "tree_dump.h"
 #include "tree.h"
@@ -20,7 +21,6 @@ main()
                 ak_free(&tree, tree.root);
                 tree_dtor(&tree);
 
-                close_save(&tree, &save);
                 close_log();
 
                 fprintf(stdout, "Мы ведь даже не начали...\n");
@@ -49,6 +49,8 @@ main()
                                 break;
                         case MODE_EXIT:
                                 break;
+                        default:
+                                assert(0 && "Invalid mode value.");
                 }
         }
         
