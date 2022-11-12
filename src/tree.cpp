@@ -5,9 +5,7 @@
 #include "tree.h"
 #include "log.h"
 
-char TREE_DATA_POISON[] = "nothing";
-
-static void
+static void // ???????
 tree_resize(tree_t *tree, int new_cap)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
@@ -21,7 +19,7 @@ tree_resize(tree_t *tree, int new_cap)
         }
 
         tree_node_t *tmp_nodes = (tree_node_t *) realloc(tree->nodes,
-                            (size_t) new_cap * sizeof(tree_node_t));
+                            (size_t) new_cap * sizeof(tree_node_t)); // ????
 
         if (tmp_nodes == nullptr) {
                 fprintf(stderr, "Error: Couldn't allocate memory "
@@ -34,7 +32,7 @@ tree_resize(tree_t *tree, int new_cap)
         tree->nodes = tmp_nodes;
 
         for (int i = tree->cap; i < new_cap; i++) {
-                tree->nodes[i].data = TREE_DATA_POISON;
+                tree->nodes[i].data = nullptr;
                 tree->nodes[i].left = -1;
                 tree->nodes[i].right = -1;
                 tree->nodes[i].next_free = i + 1;
@@ -46,7 +44,7 @@ tree_resize(tree_t *tree, int new_cap)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void
+void // ??????
 tree_ctor(tree_t *tree, int cap)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
@@ -58,7 +56,7 @@ tree_ctor(tree_t *tree, int cap)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void
+void // ?????
 node_insert(tree_t *tree, int *parent, tree_data_t data)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
@@ -90,7 +88,7 @@ node_bound(int *parent, int node)
         if (*parent != -1 && node != 0) {
                 log("Warning: pointer is already initialized.\n"
                     "Bounding may lead to loss of data.n");
-                fprintf(stderr, "Warning: pointer is already initialized.\n"
+                fprintf(stderr, "Warning: pointer is already initialized.\n" // ?????
                                 "Bounding may lead to loss of data.\n");
         }
 
@@ -99,14 +97,14 @@ node_bound(int *parent, int node)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void
+void // ????
 node_remove(tree_t *tree, int *pos)
 {
         log("Entered %s.\n", __PRETTY_FUNCTION__);
 
         assert(tree);
 
-        tree->nodes[*pos].data = TREE_DATA_POISON;
+        tree->nodes[*pos].data = nullptr;
 
         if (tree->nodes[*pos].left != -1)
                 node_remove(tree, &tree->nodes[*pos].left);

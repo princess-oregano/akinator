@@ -3,7 +3,7 @@ OBJDIR := obj
 
 SRC := main.cpp akinator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp UI.cpp stack.cpp error.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
-TARGET := akinator
+TARGET := akinatorka
 
 CXX := g++
 CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \

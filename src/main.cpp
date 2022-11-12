@@ -16,11 +16,43 @@ main()
         tree_ctor(&tree, 100);
 
         print_hello();
-        open_save(&tree, &save);
+        if (open_save(&tree, &save) == AK_EXIT) {
+                ak_free(&tree, tree.root);
+                tree_dtor(&tree);
+
+                close_save(&tree, &save);
+                close_log();
+
+                fprintf(stdout, "Мы ведь даже не начали...\n");
+                return 0;
+        }
 
         include_graph(tree_graph_dump(&tree));
 
-        ak_guess(&tree, save.filename);
+        int mode = 0;
+        while (mode != ANS_EXIT) {
+                mode = get_choice();
+                switch (mode) {
+                        case MODE_GUESS:
+                                ak_guess(&tree, save.filename);
+                                ak_free(&tree, tree.root);
+                                tree_dtor(&tree);
+                                close_save(&tree, &save);
+                                close_log();
+                                return 0;
+                                break;
+                        case MODE_DEFINE:
+                                ak_define(&tree, stdout);
+                                break;
+                        case MODE_COMPARE:
+                                ak_compare(&tree, stdout);
+                                break;
+                        case MODE_EXIT:
+                                break;
+                }
+        }
+        
+        include_graph(tree_graph_dump(&tree));
 
         ak_free(&tree, tree.root);
         tree_dtor(&tree);

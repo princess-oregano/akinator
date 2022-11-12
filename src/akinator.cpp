@@ -28,13 +28,16 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         while ((ans = ask(&data)) != ANS_LONG) {
                 switch (ans) {
                         case ANS_TRUE:
+                                free(data);
                                 fprintf(stream, "Да?..\n");
                                 break;
                         case ANS_FALSE:
+                                free(data);
                                 fprintf(stream, "Нет?..\n");
                                 break;
                         case ANS_EXIT:
-                                fprintf(stream, "Верх невежества!\n");
+                                free(data);
+                                fprintf(stream, "Я обиделась!\n");
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
@@ -49,13 +52,17 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
         while ((ans = ask(&differ)) != ANS_LONG) {
                 switch (ans) {
                         case ANS_TRUE:
+                                free(differ);
                                 fprintf(stream, "Да?..\n");
                                 break;
                         case ANS_FALSE:
+                                free(differ);
                                 fprintf(stream, "Нет?..\n");
                                 break;
                         case ANS_EXIT:
-                                fprintf(stream, "Верх невежества!\n");
+                                free(differ);
+                                free(data);
+                                fprintf(stream, "Я обиделась!\n");
                                 return AK_EXIT;
                         case ANS_LONG:
                                 break;
@@ -77,7 +84,7 @@ ak_ask_final(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        int ret_val = false;
+        int ret_val = -1;
 
         char *data = nullptr;
         int ans = ANS_LONG;
@@ -88,23 +95,25 @@ ak_ask_final(tree_t *tree, int pos, FILE *stream)
                 switch (ans) {
                         case ANS_TRUE:
                                 ret_val = AK_TRUE;
+                                free(data);
                                 break;
                         case ANS_FALSE:
                                 ret_val = AK_FALSE;
+                                free(data);
                                 break;
                         case ANS_EXIT:
                                 fprintf(stream, "Вы просто не хотите "
                                                 "признавать мою правоту!\n");
+                                free(data);
                                 return AK_EXIT;
                                 break;
                         case ANS_LONG:
                                 fprintf(stream, "Неужели сложно ответить "
                                                 "да или нет?\n");
+                                free(data);
                                 break;
                 }
         }
-
-        free(data);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 
@@ -136,7 +145,7 @@ ak_navigate(tree_t *tree, int *pos, FILE *stream)
                                 return AK_FALSE;
                                 break;
                         case ANS_EXIT:
-                                fprintf(stream, "Верх невежества!\n");
+                                fprintf(stream, "Я обиделась!\n");
                                 free(data);
                                 return AK_EXIT;
                                 break;
@@ -144,13 +153,13 @@ ak_navigate(tree_t *tree, int *pos, FILE *stream)
                                 fprintf(stream, "Неужели сложно ответить "
                                                 "да или нет?\n");
                                 free(data);
+                                fprintf(stream, "Это %s?\n", 
+                                                tree->nodes[*pos].data);
                                 break;
                 }
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
-        return ret_val;
 }
 
 static int
@@ -237,40 +246,86 @@ ak_guess(tree_t *tree, const char *filename)
 
 //////////////////////////////////SAVE_RESTORE//////////////////////////////////
 
-void
+int
 ak_start(tree_t *tree, FILE *stream)
 {
         fprintf(stream, "Скажите мне первое свойство\n");
 
+        int ans = 0;
         char *data = nullptr;
-        size_t data_size = 0;
-
-        data_size = (size_t) getline(&data, &data_size, stdin);
-        data[data_size - 1] = '\0';
-
-        node_insert(tree, &tree->root, data);
+        while ((ans = ask(&data)) != ANS_LONG) {
+                switch (ans) {
+                        case ANS_TRUE:
+                                free(data);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(data);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Я обиделась!\n");
+                                free(data);
+                                return AK_EXIT;
+                        case ANS_LONG:
+                                break;
+                }
+        }
 
         fprintf(stream, "Какой объект обладает этим свойством?\n");
 
         char *obj1 = nullptr;
-        size_t obj1_size = 0;
-
-        obj1_size = (size_t) getline(&obj1, &obj1_size, stdin);
-        obj1[obj1_size - 1] = '\0';
-
-        node_insert(tree, &tree->nodes[tree->root].left, obj1);
+        while ((ans = ask(&obj1)) != ANS_LONG) {
+                switch (ans) {
+                        case ANS_TRUE:
+                                free(obj1);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(obj1);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Я обиделась!\n");
+                                free(data);
+                                free(obj1);
+                                return AK_EXIT;
+                        case ANS_LONG:
+                                break;
+                }
+        }
 
         fprintf(stream, "А какой нет?\n");
 
         char *obj2 = nullptr;
-        size_t obj2_size = 0;
+        while ((ans = ask(&obj2)) != ANS_LONG) {
+                switch (ans) {
+                        case ANS_TRUE:
+                                free(obj2);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(obj2);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                fprintf(stream, "Я обиделась!\n");
+                                free(data);
+                                free(obj1);
+                                free(obj2);
+                                return AK_EXIT;
+                        case ANS_LONG:
+                                break;
+                }
+        }
 
-        obj2_size = (size_t) getline(&obj2, &obj2_size, stdin);
-        obj2[obj2_size - 1] = '\0';
-
+        node_insert(tree, &tree->root, data);
+        node_insert(tree, &tree->nodes[tree->root].left, obj1);
         node_insert(tree, &tree->nodes[tree->root].right, obj2);
 
         include_graph(tree_graph_dump(tree));
+
+        return AK_NORMAL;
 }
 
 static int
@@ -279,7 +334,7 @@ get_delim_buf(char **line, int delim, char *buffer)
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
         int count = 0;
-        for (count = 0; buffer[count] != delim; count++)
+        for ( ; buffer[count] != delim; count++)
                 ;
 
         *line = (char *) calloc (count + 1, sizeof(char));
@@ -288,35 +343,33 @@ get_delim_buf(char **line, int delim, char *buffer)
                 return 0;
         }
 
-        for (int i = 0; i < count; i++) {
-                (*line)[i] = buffer[i];
-        }
-
-        return count;
+        memcpy(*line, buffer, count);
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
+        
+        return count;
 }
 
-static void
+static void // ???
 get_file(const char *filename, file_t *file, const char *mode)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
         if ((file->stream = fopen(filename, mode)) == nullptr) {
-                fprintf(stderr, "Error: Couldn't open %s.\n", filename);
+                log("Error: Couldn't open %s.\n", filename);
 
                 return;
         }
 
         if (stat(filename, &file->stats) != 0) {
-                fprintf(stderr, "Error: Coudn't get stats of %s.\n", filename);
+                log("Error: Coudn't get stats of %s.\n", filename);
                 return;
         }
 
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-static void
+static void // ???
 read_file(char **buffer, file_t *file)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
@@ -367,7 +420,7 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void
+void // ???
 ak_save(tree_t *tree, const char *filename)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
@@ -395,7 +448,7 @@ build_node(tree_t *tree, char *buffer, int *pos)
 
         char *data = nullptr;
         char ch = '\0';
-        static int i = 0;
+        static int i = 0; // questionable
 
         for ( ; isspace(ch = buffer[i]); i++)
                 ;
@@ -425,7 +478,7 @@ build_node(tree_t *tree, char *buffer, int *pos)
         log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
-void
+void // ???
 ak_restore(tree_t *tree, const char *filename)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
@@ -446,26 +499,28 @@ ak_restore(tree_t *tree, const char *filename)
 /////////////////////////////////DEFINER////////////////////////////////////////
 
 // Finds leaf with data and fills definition stack.
-static void
+static bool /// ???
 ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found)
 {
         if (tree->nodes[pos].left == -1 &&
             tree->nodes[pos].right == -1) {
                 if (strcmp(tree->nodes[pos].data, data) == 0) {
-                        stack_push(def, pos);
+                        stack_push(def, pos); // ???
                         *found = true;
                 }
 
-                return;
+                return *found;
         }
 
         if (*found == true)
-                return;
+                return *found;
 
-        ak_find(tree, data, tree->nodes[pos].left, def, found);
+        ak_find(tree, data, tree->nodes[pos].left,  def, found);
         ak_find(tree, data, tree->nodes[pos].right, def, found);
         if (*found == true)
-                stack_push(def, pos);
+                stack_push(def, pos); // ???
+
+        return *found;
 }
 
 static void
@@ -475,7 +530,7 @@ ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
                 return;
         int pos = 0;
         stack_pop(def, &pos);
-        fprintf(stream, "%s:\n", data);
+        fprintf(stream, "%s ", data);
         while (def->size > 0) {
                 int new_pos = 0;
                 stack_pop(def, &new_pos);
@@ -489,15 +544,49 @@ ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
 }
 
 void
-ak_define(tree_t *tree, char *data, FILE *stream)
+ak_define(tree_t *tree, FILE *stream)
 {
         stack_t def = {};
         stack_ctor(&def, 20, VAR_INFO(def));
 
+        char *data = nullptr;
+        fprintf(stream, "Что мне описать?\n");
+
+        int ans = 0;
+        while (ans != ANS_LONG) {
+                ans = ask(&data);
+                switch(ans) {
+                        case ANS_TRUE:
+                                free(data);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(data);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                free(data);
+                                fprintf(stream, "Хочу играть!\n");
+                                break;
+                        case ANS_LONG:
+                                break;
+                }
+        }
+
         bool found = false;
-        ak_find(tree, data, tree->root, &def, &found);
+        if (ak_find(tree, data, tree->root, &def, &found) == false) {
+                fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                "Я не знаю, что Вы имели в виду.\n");
+
+                free(data);
+                stack_dtor(&def);
+
+                return;
+        }
 
         ak_print_def(tree, data, &def, stream);
+
+        free(data);
 
         stack_dtor(&def);
 }
@@ -507,7 +596,7 @@ ak_define(tree_t *tree, char *data, FILE *stream)
 /////////////////////////////////COMPARATOR/////////////////////////////////////
 
 static void
-ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
+ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2, 
               char *obj1, char *obj2, FILE *stream)
 {
         int pos1 = 0;
@@ -516,7 +605,7 @@ ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
         stack_pop(def1, &pos1);
         stack_pop(def2, &pos2);
 
-        fprintf(stream, "Общие свойства:\n");
+        fprintf(stream, "Каждый из них\n");
 
         int new_pos1 = 0;
         int new_pos2 = 0;
@@ -541,7 +630,7 @@ ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
         stack_push(def1, pos1);
         stack_push(def2, pos2);
 
-        fprintf(stream, "Различные свойства:\n");
+        fprintf(stream, "Но при этом\n");
 
         ak_print_def(tree, obj1, def1, stream);
         ak_print_def(tree, obj2, def2, stream);
@@ -549,17 +638,82 @@ ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
 }
 
 void
-ak_compare(tree_t *tree, char *obj1, char *obj2, FILE *stream)
+ak_compare(tree_t *tree, FILE *stream)
 {
         stack_t def1 = {};
         stack_t def2 = {};
         stack_ctor(&def1, 10, VAR_INFO(def1));
         stack_ctor(&def2, 10, VAR_INFO(def2));
 
+        char *obj1 = nullptr;
+        char *obj2 = nullptr;
+
+        int ans = 0;
+        while (ans != ANS_LONG) {
+                ans = ask(&obj1);
+                switch(ans) {
+                        case ANS_TRUE:
+                                free(obj1);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(obj1);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                free(obj1);
+                                fprintf(stream, "Хочу играть!\n");
+                                break;
+                        case ANS_LONG:
+                                break;
+                }
+        }
+
         bool found = false;
-        ak_find(tree, obj1, tree->root, &def1, &found);
+        if (ak_find(tree, obj1, tree->root, &def1, &found) == false) {
+                fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                "Я не знаю, что Вы имели в виду.\n");
+                
+                free(obj1);
+                stack_dtor(&def1);
+                stack_dtor(&def2);
+
+                return;
+        }
+
+        ans = 0;
+        while (ans != ANS_LONG) {
+                ans = ask(&obj2);
+                switch(ans) {
+                        case ANS_TRUE:
+                                free(obj2);
+                                fprintf(stream, "Да?..\n");
+                                break;
+                        case ANS_FALSE:
+                                free(obj2);
+                                fprintf(stream, "Нет?..\n");
+                                break;
+                        case ANS_EXIT:
+                                free(obj2);
+                                fprintf(stream, "Хочу играть!\n");
+                                break;
+                        case ANS_LONG:
+                                break;
+                }
+        }
+
         found = false;
-        ak_find(tree, obj2, tree->root, &def2, &found);
+        if (ak_find(tree, obj2, tree->root, &def2, &found) == false) {
+                fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                "Я не знаю, что Вы имели в виду.\n");
+              
+                free(obj1);
+                free(obj2);
+                stack_dtor(&def1);
+                stack_dtor(&def2);
+
+                return;
+        }
 
         ak_print_comp(tree, &def1, &def2, obj1, obj2, stream);
 
