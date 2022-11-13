@@ -42,10 +42,22 @@ main()
                                 return 0;
                                 break;
                         case MODE_DEFINE:
-                                ak_define(&tree, stdout);
+                                if (ak_define(&tree, stdout) == AK_ERROR) {
+                                        ak_free(&tree, tree.root);
+                                        tree_dtor(&tree);
+                                        close_save(&tree, &save);
+                                        close_log();
+                                        return 0;
+                                }
                                 break;
                         case MODE_COMPARE:
-                                ak_compare(&tree, stdout);
+                                if (ak_compare(&tree, stdout) == AK_ERROR) {
+                                        ak_free(&tree, tree.root);
+                                        tree_dtor(&tree);
+                                        close_save(&tree, &save);
+                                        close_log();
+                                        return 0;
+                                }
                                 break;
                         case MODE_EXIT:
                                 break;

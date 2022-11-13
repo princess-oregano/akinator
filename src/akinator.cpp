@@ -571,17 +571,19 @@ ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found, int *err)
         return *found;
 }
 
-static void
+static int
 ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
 {
         if (def->size == 0)
-                return;
+                return AK_NORMAL;
         int pos = 0;
-        stack_pop(def, &pos);
+        if (stack_pop(def, &pos) != 0)
+                return AK_ERROR;
         fprintf(stream, "%s ", data);
         while (def->size > 0) {
                 int new_pos = 0;
-                stack_pop(def, &new_pos);
+                if (stack_pop(def, &new_pos) != 0)
+                        return AK_ERROR;
                 if (tree->nodes[pos].right == new_pos)
                         fprintf(stream, "не ");
 
@@ -590,13 +592,16 @@ ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
                 pos = new_pos;
         }
         fprintf(stream, "\b\b.\n");
+
+        return AK_NORMAL;
 }
 
 int
 ak_define(tree_t *tree, FILE *stream)
 {
         stack_t def = {};
-        stack_ctor(&def, 20, VAR_INFO(def));
+        if (stack_ctor(&def, 20, VAR_INFO(def)) != 0)
+                return AK_ERROR;
 
         char *data = nullptr;
         fprintf(stream, "Что мне описать?\n");
@@ -652,30 +657,35 @@ ak_define(tree_t *tree, FILE *stream)
 
 /////////////////////////////////COMPARATOR/////////////////////////////////////
 
-static void
+static int
 ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2, 
               char *obj1, char *obj2, FILE *stream)
 {
         int pos1 = tree->root;
         int pos2 = tree->root;
 
-        stack_pop(def1, &pos1);
-        stack_pop(def2, &pos2);
+        if (stack_pop(def1, &pos1) != 0 ||
+            stack_pop(def2, &pos2) != 0)
+                return AK_ERROR;
 
         int new_pos1 = -1;
         int new_pos2 = -1;
-        stack_pop(def1, &new_pos1);
-        stack_pop(def2, &new_pos2);
+        if (stack_pop(def1, &new_pos1) != 0 ||
+            stack_pop(def2, &new_pos2) != 0)
+                return AK_ERROR;
 
-        stack_push(def1, new_pos1);
-        stack_push(def2, new_pos2);
+        if (stack_push(def1, new_pos1) != 0 ||
+            stack_push(def2, new_pos2) != 0)
+                return AK_ERROR;
+
         if (new_pos1 != new_pos2)
                 fprintf(stream, "Совсем не похожи!\n");
         else {
                 fprintf(stream, "Каждый из них\n");
                 while (def1->size > 0 && def2->size > 0) {
-                        stack_pop(def1, &new_pos1);
-                        stack_pop(def2, &new_pos2);
+                        if (stack_pop(def1, &new_pos1) != 0 ||
+                            stack_pop(def2, &new_pos2) != 0)
+                                return AK_ERROR;
 
                         if (new_pos1 != new_pos2)
                                 break;
@@ -688,25 +698,31 @@ ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
                         pos1 = new_pos1;
                         pos2 = new_pos2;
                 }
-                stack_push(def1, new_pos1);
-                stack_push(def2, new_pos2);
-                stack_push(def1, pos1);
-                stack_push(def2, pos2);
+                if (stack_push(def1, new_pos1) != 0 ||
+                    stack_push(def2, new_pos2) != 0||
+                    stack_push(def1, pos1) != 0 ||
+                    stack_push(def2, pos2) != 0)
+                        return AK_ERROR;
 
                 fprintf(stream, "Но при этом\n");
 
         }
-        ak_print_def(tree, obj1, def1, stream);
-        ak_print_def(tree, obj2, def2, stream);
+        
+        if (ak_print_def(tree, obj1, def1, stream) != AK_NORMAL ||
+            ak_print_def(tree, obj2, def2, stream) != AK_NORMAL)
+                return AK_ERROR;
+
+        return AK_NORMAL;
 }
 
-void
+int
 ak_compare(tree_t *tree, FILE *stream)
 {
         stack_t def1 = {};
         stack_t def2 = {};
-        stack_ctor(&def1, 10, VAR_INFO(def1));
-        stack_ctor(&def2, 10, VAR_INFO(def2));
+        if (stack_ctor(&def1, 10, VAR_INFO(def1)) != 0 ||
+            stack_ctor(&def2, 10, VAR_INFO(def2)) != 0)
+                return AK_ERROR;
 
         char *obj1 = nullptr;
         char *obj2 = nullptr;
@@ -749,7 +765,7 @@ ak_compare(tree_t *tree, FILE *stream)
                 stack_dtor(&def1);
                 stack_dtor(&def2);
 
-                return;
+                return AK_NORMAL;
         }
 
         fprintf(stream, "И с кем?\n");
@@ -780,18 +796,20 @@ ak_compare(tree_t *tree, FILE *stream)
         found = false;
         err = 0;
         if (ak_find(tree, obj2, tree->root, &def2, &found, &err) == false) {
-                if (err != 0)
-                        fprintf(stream, "Немного спать захотелось...\n");
-                else
-                        fprintf(stream, "Это... Превзошло мои ожидания.\n"
-                                        "Я не знаю, что Вы имели в виду.\n");
-              
                 free(obj1);
                 free(obj2);
                 stack_dtor(&def1);
                 stack_dtor(&def2);
 
-                return;
+                if (err != 0) {
+                        fprintf(stream, "Немного спать захотелось...\n");
+                        return AK_ERROR;
+                }
+                else {
+                        fprintf(stream, "Это... Превзошло мои ожидания.\n"
+                                        "Я не знаю, что Вы имели в виду.\n");
+                        return AK_NORMAL;
+                }
         }
 
         if (strcmp(obj1, obj2) == 0) {
@@ -805,6 +823,8 @@ ak_compare(tree_t *tree, FILE *stream)
 
         stack_dtor(&def1);
         stack_dtor(&def2);
+
+        return AK_NORMAL;
 }
 
 //////////////////////////////END_COMPARATOR////////////////////////////////////

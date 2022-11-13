@@ -36,7 +36,7 @@ ak_guess(tree_t *tree, const char *filename);
 int
 ak_define(tree_t *tree, FILE *stream);
 // Compares two objects.
-void
+int
 ak_compare(tree_t *tree, FILE *stream);
 // Frees all allocated for nodes data memory.
 void
