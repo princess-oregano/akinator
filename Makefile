@@ -75,6 +75,8 @@ clean:
 
 distclean:
 	printf "%s\n" "Removing built files..."
+	rm log.html
+	rm -rf dmp
 	rm -rf $(OBJDIR)
 	rm $(TARGET)
 	printf "%s\n" "Done."

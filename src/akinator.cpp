@@ -19,6 +19,8 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
+        assert(tree);
+
         int ans = 0;
 
         fprintf(stream, "И что же Вы имели в виду?\n");
@@ -92,7 +94,7 @@ ak_insert(tree_t *tree, int pos, FILE *stream)
 static int
 ak_ask_final(tree_t *tree, int pos, FILE *stream)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(tree);
 
         int ret_val = -1;
 
@@ -127,8 +129,6 @@ ak_ask_final(tree_t *tree, int pos, FILE *stream)
                 }
         }
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return ret_val;
 }
 
@@ -136,7 +136,8 @@ ak_ask_final(tree_t *tree, int pos, FILE *stream)
 static int
 ak_navigate(tree_t *tree, int *pos, FILE *stream)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(tree);
+        assert(pos);
 
         fprintf(stream, "Это %s?\n", tree->nodes[*pos].data);
 
@@ -170,13 +171,14 @@ ak_navigate(tree_t *tree, int *pos, FILE *stream)
                                 assert(0 && "Invalid ans value.");
                 }
         }
-
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 static int
 ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
 {
+        assert(tree);
+        assert(pos);
+
         int insert_ret = 0;
         switch (ak_ask_final(tree, *pos, stdout)) {
                 case AK_TRUE:
@@ -209,9 +211,9 @@ ak_take_final_guess(tree_t *tree, int *pos, FILE *stream)
 static int
 ak_take_guess(tree_t *tree, int *pos, FILE *stream)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
+        assert(pos);
+
         if (*pos < 0) {
                 fprintf(stderr, "Invalid *pos value.\n");
                 return AK_ERROR;
@@ -234,6 +236,8 @@ ak_take_guess(tree_t *tree, int *pos, FILE *stream)
 void
 ak_free(tree_t *tree, int pos)
 {
+        assert(tree);
+
         if (tree->nodes[pos].left != -1)
                 ak_free(tree, tree->nodes[pos].left);
 
@@ -246,9 +250,8 @@ ak_free(tree_t *tree, int pos)
 void
 ak_guess(tree_t *tree, const char *filename)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
+        assert(filename);
 
         int pos = tree->root;
 
@@ -256,8 +259,6 @@ ak_guess(tree_t *tree, const char *filename)
                 ;
 
         ak_save(tree, filename);
-
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 ////////////////////////////////END_GUESSER/////////////////////////////////////
@@ -267,6 +268,8 @@ ak_guess(tree_t *tree, const char *filename)
 int
 ak_start(tree_t *tree, FILE *stream)
 {
+        assert(tree);
+
         fprintf(stream, "Скажите мне первое свойство\n");
 
         int ans = 0;
@@ -361,7 +364,7 @@ ak_start(tree_t *tree, FILE *stream)
 static int
 get_delim_buf(char **line, int delim, char *buffer)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(line);
 
         size_t count = 0;
         for ( ; buffer[count] != delim; count++)
@@ -383,7 +386,9 @@ get_delim_buf(char **line, int delim, char *buffer)
 static int
 get_file(const char *filename, file_t *file, const char *mode)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(filename);
+        assert(file);
+        assert(mode);
 
         if ((file->stream = fopen(filename, mode)) == nullptr) {
                 log("Error: Couldn't open %s.\n", filename);
@@ -396,16 +401,13 @@ get_file(const char *filename, file_t *file, const char *mode)
                 return AK_ERROR;
         }
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return AK_NORMAL;
 }
 
 static int
 read_file(char **buffer, file_t *file)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
+        assert(buffer);
         assert(file);
 
         *buffer = (char *) mmap(NULL, (size_t) file->stats.st_size, PROT_READ,
@@ -416,18 +418,13 @@ read_file(char **buffer, file_t *file)
                 return AK_ERROR;
         }
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return AK_NORMAL;
 }
 
 static void
 print_node(tree_t *tree, int pos, FILE *stream, int level)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
-        assert(stream);
 
         if (pos < 0)
                 return;
@@ -450,14 +447,13 @@ print_node(tree_t *tree, int pos, FILE *stream, int level)
                         fprintf(stream, "        ");
                 fprintf(stream, "}\n");
         }
-
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 int
 ak_save(tree_t *tree, const char *filename)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(tree);
+        assert(filename);
 
         file_t file;
         if (get_file(filename, &file, "w") == AK_ERROR)
@@ -469,8 +465,6 @@ ak_save(tree_t *tree, const char *filename)
 
         fclose(file.stream);
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return AK_NORMAL;
 }
 
@@ -478,14 +472,13 @@ ak_save(tree_t *tree, const char *filename)
 static void
 build_node(tree_t *tree, char *buffer, int *pos)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
         assert(buffer);
+        assert(pos);
 
         char *data = nullptr;
         char ch = '\0';
-        static int i = 0; // questionable
+        static int i = 0;
 
         for ( ; isspace(ch = buffer[i]); i++)
                 ;
@@ -512,13 +505,13 @@ build_node(tree_t *tree, char *buffer, int *pos)
                         return;
                 }
         }
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 int
 ak_restore(tree_t *tree, const char *filename)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
+        assert(tree);
+        assert(filename);
 
         file_t file;
         if (get_file(filename, &file, "r") == AK_ERROR)
@@ -545,6 +538,12 @@ ak_restore(tree_t *tree, const char *filename)
 static bool
 ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found, int *err)
 {
+        assert(tree);
+        assert(data);
+        assert(def);
+        assert(found);
+        assert(err);
+
         if (*err != 0) {
                 *found = false;
                 return *found;
@@ -574,6 +573,10 @@ ak_find(tree_t *tree, char *data, int pos, stack_t *def, bool *found, int *err)
 static int
 ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
 {
+        assert(tree);
+        assert(data);
+        assert(def);
+
         if (def->size == 0)
                 return AK_NORMAL;
         int pos = 0;
@@ -599,6 +602,8 @@ ak_print_def(tree_t *tree, char *data, stack_t *def, FILE *stream)
 int
 ak_define(tree_t *tree, FILE *stream)
 {
+        assert(tree);
+
         stack_t def = {};
         if (stack_ctor(&def, 20, VAR_INFO(def)) != 0)
                 return AK_ERROR;
@@ -661,6 +666,11 @@ static int
 ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2, 
               char *obj1, char *obj2, FILE *stream)
 {
+        assert(tree);
+        assert(def1);
+        assert(def2);
+        assert(obj1 && obj2);
+
         int pos1 = tree->root;
         int pos2 = tree->root;
 
@@ -718,6 +728,8 @@ ak_print_comp(tree_t *tree, stack_t *def1, stack_t *def2,
 int
 ak_compare(tree_t *tree, FILE *stream)
 {
+        assert(tree);
+
         stack_t def1 = {};
         stack_t def2 = {};
         if (stack_ctor(&def1, 10, VAR_INFO(def1)) != 0 ||
